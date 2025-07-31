@@ -8,10 +8,10 @@ A full-stack geospatial application for creating and serving custom styled vecto
 
 This project consists of 4 microservices:
 
-- **front** - React frontend with MapLibre GL JS for map editing and visualization
-- **back** - Node.js/Express API server for data management
-- **tile-server** - Express server for serving vector tiles from MBTiles files
-- **tiler** - Microservice for generating tilesets using Tippecanoe
+- **front** - React frontend with MapLibre GL JS for map editing (admin) and visualization (user)
+- **back** - Node.js/Express microservice for maps management and authentication
+- **tile-server** - Node.js/Express microservice for serving vector tiles from MBTiles files
+- **tiler** - Node.js/Express microservice for generating tilesets using Tippecanoe
 
 ## Features
 
