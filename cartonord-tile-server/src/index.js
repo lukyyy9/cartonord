@@ -13,7 +13,7 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
-    service: 'cartonord-tile-server',
+    service: 'tile-server',
     timestamp: new Date().toISOString()
   });
 });

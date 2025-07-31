@@ -30,7 +30,7 @@ The tile server provides fast access to vector tiles stored in MBTiles format. I
 ### Development
 
 ```bash
-cd cartonord-tile-server
+cd tile-server
 npm install
 npm run dev
 ```
@@ -38,8 +38,8 @@ npm run dev
 ### Docker
 
 ```bash
-docker build -t cartonord-tile-server .
-docker run -p 3003:3003 -v /data/tilesets:/data/tilesets cartonord-tile-server
+docker build -t tile-server .
+docker run -p 3003:3003 -v /data/tilesets:/data/tilesets tile-server
 ```
 
 ## Configuration
@@ -159,7 +159,7 @@ Returns service health status.
 ```json
 {
   "status": "healthy",
-  "service": "cartonord-tile-server",
+  "service": "tile-server",
   "timestamp": "2024-01-15T10:30:00Z",
   "uptime": 3600,
   "version": "1.0.0"
@@ -365,7 +365,7 @@ npm run test:performance   # Performance benchmarks
 ### Debugging
 
 ```bash
-DEBUG=cartonord-tile-server:* npm run dev
+DEBUG=tile-server:* npm run dev
 ```
 
 ## Security

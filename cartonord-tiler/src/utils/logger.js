@@ -7,7 +7,7 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  defaultMeta: { service: 'cartonord-tiler' },
+  defaultMeta: { service: 'tiler' },
   transports: [
     new winston.transports.File({
       filename: '/data/logs/error.log',

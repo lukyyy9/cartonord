@@ -1,5 +1,5 @@
 {
-  "name": "cartonord-back",
+  "name": "back",
   "version": "1.0.0",
   "description": "Service backend pour la gestion de cartes stylisées et la génération de tilesets",
   "main": "src/index.js",

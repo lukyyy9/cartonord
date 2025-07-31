@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 
 class HealthService {
   constructor() {
-    this.serviceName = 'cartonord-tiler';
+    this.serviceName = 'tiler';
   }
 
   /**

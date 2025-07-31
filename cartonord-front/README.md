@@ -29,7 +29,7 @@ The frontend provides an intuitive interface for importing GeoJSON data, applyin
 ### Development
 
 ```bash
-cd cartonord-front
+cd front
 npm install
 npm run dev
 ```
@@ -39,8 +39,8 @@ Access the application at [http://localhost:5173](http://localhost:5173)
 ### Docker
 
 ```bash
-docker build -t cartonord-front .
-docker run -p 5173:80 cartonord-front
+docker build -t front .
+docker run -p 5173:80 front
 ```
 
 ## Configuration

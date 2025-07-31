@@ -24,7 +24,7 @@ router.get('/detailed', async (req, res) => {
     res.status(500).json({
       status: 'error',
       timestamp: new Date().toISOString(),
-      service: 'cartonord-tiler',
+      service: 'tiler',
       error: error.message
     });
   }

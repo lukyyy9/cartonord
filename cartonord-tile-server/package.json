@@ -1,5 +1,5 @@
 {
-  "name": "cartonord-tile-server",
+  "name": "tile-server",
   "version": "1.0.0",
   "description": "Service de distribution de tuiles vectorielles pour Cartonord",
   "main": "src/index.js",

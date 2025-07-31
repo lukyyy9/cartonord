@@ -31,7 +31,7 @@ The tiler service converts GeoJSON data into optimized MBTiles files using Tippe
 ### Development
 
 ```bash
-cd cartonord-tiler
+cd tiler
 npm install
 npm run dev
 ```
@@ -44,8 +44,8 @@ npm run dev
 ### Docker
 
 ```bash
-docker build -t cartonord-tiler .
-docker run -p 3002:3002 -v /data:/data cartonord-tiler
+docker build -t tiler .
+docker run -p 3002:3002 -v /data:/data tiler
 ```
 
 ## Configuration
@@ -349,7 +349,7 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json()
   ),
-  defaultMeta: { service: 'cartonord-tiler' },
+  defaultMeta: { service: 'tiler' },
   transports: [
     new winston.transports.File({ filename: 'tiler.log' }),
     new winston.transports.Console()
@@ -423,7 +423,7 @@ npm run test:performance   # Performance benchmarks
 ### Debugging
 
 ```bash
-DEBUG=cartonord-tiler:* npm run dev
+DEBUG=tiler:* npm run dev
 ```
 
 ### Local Development without Tippecanoe

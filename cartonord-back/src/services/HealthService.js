@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 
 class HealthService {
   constructor() {
-    this.serviceName = 'cartonord-back';
+    this.serviceName = 'back';
   }
 
   /**

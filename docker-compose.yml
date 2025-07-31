@@ -19,7 +19,7 @@ services:
   # Backend API
   backend:
     build:
-      context: ./cartonord-back
+      context: ./back
       dockerfile: Dockerfile
     environment:
       NODE_ENV: development
@@ -38,7 +38,7 @@ services:
   # Service de génération de tilesets
   tiler:
     build:
-      context: ./cartonord-tiler
+      context: ./tiler
       dockerfile: Dockerfile
     environment:
       NODE_ENV: development
@@ -52,7 +52,7 @@ services:
   # Serveur de tuiles vectorielles
   tile-server:
     build:
-      context: ./cartonord-tile-server
+      context: ./tile-server
       dockerfile: Dockerfile
     environment:
       NODE_ENV: development
@@ -69,7 +69,7 @@ services:
   # Frontend React
   frontend:
     build:
-      context: ./cartonord-front
+      context: ./front
       dockerfile: Dockerfile
     ports:
       - "80:80"

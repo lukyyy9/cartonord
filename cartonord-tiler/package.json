@@ -1,5 +1,5 @@
 {
-  "name": "cartonord-tiler",
+  "name": "tiler",
   "version": "1.0.0",
   "description": "Service de génération de tilesets avec Tippecanoe pour Cartonord",
   "main": "src/index.js",

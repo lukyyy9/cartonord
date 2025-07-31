@@ -8,10 +8,10 @@ A full-stack geospatial application for creating and serving custom styled vecto
 
 This project consists of 4 microservices:
 
-- **cartonord-front** - React frontend with MapLibre GL JS for map editing and visualization
-- **cartonord-back** - Node.js/Express API server for data management
-- **cartonord-tile-server** - Express server for serving vector tiles from MBTiles files
-- **cartonord-tiler** - Microservice for generating tilesets using Tippecanoe
+- **front** - React frontend with MapLibre GL JS for map editing and visualization
+- **back** - Node.js/Express API server for data management
+- **tile-server** - Express server for serving vector tiles from MBTiles files
+- **tiler** - Microservice for generating tilesets using Tippecanoe
 
 ## Features
 
@@ -47,7 +47,7 @@ This project consists of 4 microservices:
 ### Frontend
 
 ```bash
-cd cartonord-front
+cd front
 npm install
 npm run dev
 ```
@@ -55,7 +55,7 @@ npm run dev
 ### Backend
 
 ```bash
-cd cartonord-back
+cd back
 npm install
 npm run dev
 ```
@@ -63,7 +63,7 @@ npm run dev
 ### Tile Server
 
 ```bash
-cd cartonord-tile-server
+cd tile-server
 npm install
 npm run dev
 ```

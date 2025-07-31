@@ -31,7 +31,7 @@ The backend service provides a comprehensive REST API for managing map projects,
 ### Development
 
 ```bash
-cd cartonord-back
+cd back
 npm install
 cp .env.example .env
 npm run dev
