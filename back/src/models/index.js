@@ -13,12 +13,13 @@ const Map = require('./Map')(sequelize);
 const Layer = require('./Layer')(sequelize);
 const PointOfInterest = require('./PointOfInterest')(sequelize);
 const Pictogram = require('./Pictogram')(sequelize);
+const Admin = require('./Admin')(sequelize);
 
 // Définition des associations
 Map.hasMany(Layer, { 
     foreignKey: 'mapId', 
     as: 'layers',
-    onDelete: 'CASCADE' // Suppression en cascade
+    onDelete: 'CASCADE'
 });
 
 Layer.belongsTo(Map, { 
@@ -26,7 +27,6 @@ Layer.belongsTo(Map, {
     as: 'map'
 });
 
-// Ajouter les associations pour PointOfInterest
 Map.hasMany(PointOfInterest, {
     foreignKey: 'mapId',
     as: 'pointsOfInterest'
@@ -39,10 +39,10 @@ PointOfInterest.belongsTo(Map, {
 
 Layer.hasMany(PointOfInterest, { 
     foreignKey: 'layerId', 
-    as: 'pointsOfInterest',
-    onDelete: 'CASCADE' // Suppression en cascade
+    as: 'pointsOfInterest'
 });
-PointOfInterest.belongsTo(Layer, {
+
+PointOfInterest.belongsTo(Layer, { 
     foreignKey: 'layerId',
     as: 'layer'
 });
@@ -52,5 +52,6 @@ module.exports = {
     Map,
     Layer,
     PointOfInterest,
-    Pictogram
+    Pictogram,
+    Admin
 };

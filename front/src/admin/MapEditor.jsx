@@ -8,6 +8,8 @@ import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-
 import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder'
 import { getReorderDestinationIndex } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index'
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine'
+import { apiService } from '../services/api';
+import AdminHeader from '../components/AdminHeader';
 
 function MapEditor() {
   const mapContainer = useRef(null);
@@ -460,18 +462,17 @@ function MapEditor() {
       // Récupérer les données GeoJSON de chaque couche depuis la carte
       const layersData = await Promise.all(
         loadedLayers.map(async (layer, index) => {
-          // Récupérer les données GeoJSON depuis la source de la carte
           const source = map.current.getSource(layer.sourceId);
-          const geojsonData = source._data; // Les données GeoJSON complètes
+          const geojsonData = source._data;
           
           return {
-            name: layer.fileName.replace(/\.[^/.]+$/, ""), // Nom sans extension
+            name: layer.fileName.replace(/\.[^/.]+$/, ""),
             fileName: layer.fileName,
-            geojsonData: geojsonData, // Données géographiques complètes
+            geojsonData: geojsonData,
             color: layer.color,
             opacity: layer.opacity,
-            zIndex: index, // L'ordre dans la liste devient le z-index
-            layerType: 'mixed', // Type par défaut
+            zIndex: index,
+            layerType: 'mixed',
             style: {
               color: layer.color,
               opacity: layer.opacity
@@ -480,21 +481,19 @@ function MapEditor() {
         })
       );
   
-      // Préparer les données des points d'intérêt
       const poisData = pointsOfInterest.map(poi => ({
         name: poi.name,
         description: poi.properties?.description || '',
-        coordinates: poi.coordinates, // [longitude, latitude]
+        coordinates: poi.coordinates,
         pictogram: poi.pictogram || null,
         pictogramFile: poi.pictogramFile || null,
         properties: poi.properties || {},
         sourceFile: poi.sourceFile
       }));
   
-      // Préparer le payload complet
       const payload = {
-        name: "Ma carte", // TODO: permettre à l'utilisateur de définir le nom
-        description: "Carte créée avec l'éditeur", // TODO: permettre à l'utilisateur de définir la description
+        name: "Ma carte",
+        description: "Carte créée avec l'éditeur",
         config: {
           center: map.current.getCenter().toArray(),
           zoom: map.current.getZoom(),
@@ -508,14 +507,7 @@ function MapEditor() {
   
       console.log('Données à sauvegarder:', payload);
   
-      // Envoyer la requête PUT
-      const response = await fetch('http://localhost:3001/api/maps/ad386d03-509f-457d-b764-bfd63e7a503b', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await apiService.put('/api/maps/ad386d03-509f-457d-b764-bfd63e7a503b', payload);
   
       if (!response.ok) {
         const errorData = await response.json();
@@ -525,7 +517,6 @@ function MapEditor() {
       const result = await response.json();
       console.log('Sauvegarde réussie:', result);
       
-      // Vérifier le statut du tileset
       if (result.status === 'ready') {
         alert('Carte sauvegardée avec succès ! Tileset généré.');
       } else if (result.status === 'tileset_error') {
@@ -625,280 +616,283 @@ function MapEditor() {
   }, []);
 
   return (
-    <div className="app">
-      {/* Panneau latéral avec onglets */}
-      <div className="layer-list">
-        <div className="tabs">
-          <button 
-            className={`tab ${activeTab === 'layers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('layers')}
-          >
-            Couches
-          </button>
-          <button 
-            className={`tab ${activeTab === 'poi' ? 'active' : ''}`}
-            onClick={() => setActiveTab('poi')}
-          >
-            Points d'intérêt
-          </button>
-          <button 
-            className={`tab ${activeTab === 'save' ? 'active' : ''}`}
-            onClick={() => setActiveTab('save')}
-          >
-            Sauvegarder
-          </button>
-        </div>
-        
-        <div className={`tab-content ${activeTab === 'layers' ? 'active' : ''}`}>
-          <div className="upload-container-sidebar">
-            <input 
-              type="file" 
-              id="geojson-upload" 
-              className="file-input" 
-              accept=".geojson,.json" 
-              onChange={handleFileUpload} 
-              multiple
-            />
-          </div>
-          
-          {loadedLayers.length > 0 && (
-            <>
-              <ul>
-            {loadedLayers.map((layer, index) => (
-              <li 
-                key={layer.sourceId} 
-                className={`layer-item ${draggedLayer === layer.sourceId ? 'dragging' : ''}`}
-                ref={element => {
-                  if (element) {
-                    layerRefs.current.set(layer.sourceId, element);
-                    
-                    // Configurer le drag-and-drop pour cet élément
-                    const dragCleanup = initDragElement(element, layer, index);
-                    
-                    // Configurer la zone de drop pour cet élément
-                    const dropCleanup = dropTargetForElements({
-                      element,
-                      canDrop: ({ source }) => source.data?.instanceId === instanceId,
-                      getData: ({ input }) => {
-                        return attachClosestEdge(
-                          { layer, index, instanceId },
-                          {
-                            element,
-                            input,
-                            allowedEdges: ['top', 'bottom']
-                          }
-                        );
-                      },
-                      onDragStart: () => setDraggedLayer(layer.sourceId),
-                      onDragEnter: ({ self }) => {
-                        const edge = extractClosestEdge(self.data);
-                        setHoveredEdge({ layerId: layer.sourceId, edge });
-                      },
-                      onDrag: ({ self }) => {
-                        const edge = extractClosestEdge(self.data);
-                        setHoveredEdge({ layerId: layer.sourceId, edge });
-                      },
-                      onDragLeave: () => {
-                        setHoveredEdge({ layerId: null, edge: null });
-                      }
-                    });
-
-                    // Enregistrer les fonctions de nettoyage
-                    element.cleanup = combine(dragCleanup, dropCleanup);
-                    
-                    return () => {
-                      if (element.cleanup) {
-                        element.cleanup();
-                      }
-                    };
-                  }
-                }}
-              >
-                <div className="layer-info">
-                  <span className="layer-name">
-                    <span className="drag-handle" title="Glisser pour réordonner">☰</span>
-                    {layer.fileName}
-                  </span>
-                  <div className="layer-controls">
-                    <input 
-                      type="color" 
-                      value={layer.color}
-                      onChange={(e) => changeLayerColor(layer, e.target.value)}
-                      className="color-picker"
-                      title="Changer la couleur"
-                    />
-                    <div className="opacity-control">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        value={opacityInputs[layer.sourceId] !== undefined 
-                          ? opacityInputs[layer.sourceId] 
-                          : Math.round((layer.opacity || defaultOpacity) * 100)}
-                        onChange={(e) => handleOpacityInputChange(layer, e.target.value)}
-                        onBlur={() => handleOpacityInputBlur(layer)}
-                        className="opacity-input"
-                        title="Ajuster l'opacité (0-100)"
-                      />
-                      <span className="opacity-label">%</span>
-                    </div>
-                    <button 
-                      onClick={() => removeLayer(layer)} 
-                      className="remove-layer"
-                      title="Supprimer la couche"
-                    >
-                      X
-                    </button>
-                  </div>
-                </div>
-                {hoveredEdge.layerId === layer.sourceId && (
-                  <div className={`drop-indicator ${hoveredEdge.edge}`}></div>
-                )}
-              </li>
-            ))}
-              </ul>
-            </>
-          )}
-        </div>
-        <div className={`tab-content ${activeTab === 'poi' ? 'active' : ''}`}>
-          {pointsOfInterest.length > 0 ? (
-            <div className="poi-groups">
-              {/* Regrouper les points par fichier source */}
-              {Object.entries(
-                pointsOfInterest.reduce((groups, point) => {
-                  const source = point.sourceFile;
-                  if (!groups[source]) groups[source] = [];
-                  groups[source].push(point);
-                  return groups;
-                }, {})
-              ).map(([sourceFile, points]) => (
-                <div key={sourceFile} className="poi-source-group">
-                  <h4 className="poi-source-title">{sourceFile}</h4>
-                  <ul className="poi-list">
-                    {points.map(point => (
-                      <li key={point.id} className="poi-item">
-                        <div className="poi-header">
-                          <span className="poi-name">
-                            {point.name || point.properties?.name || "Point sans nom"}
-                          </span>
-                          <button 
-                            className="edit-poi-btn" 
-                            title="Éditer ce point"
-                            onClick={() => handleEditPOI(point)}
-                          >
-                            ✏️
-                          </button>
-                        </div>
-                        <div className="poi-coords">
-                          <div>
-                            Lg: {point.coordinates[0].toFixed(5)}
-                          </div>
-                          <div>
-                            Lt: {point.coordinates[1].toFixed(5)}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>Aucun point d'intérêt trouvé. Importez des fichiers GeoJSON contenant des points.</p>
-          )}
-        </div>
-        <div className={`tab-content ${activeTab === 'save' ? 'active' : ''}`}>
-          <div className="save-section">
+    <div className="admin-layout">
+      <AdminHeader />
+      <div className="app">
+        {/* Panneau latéral avec onglets */}
+        <div className="layer-list">
+          <div className="tabs">
             <button 
-              className="save-main-btn" 
-              onClick={handleSave}
+              className={`tab ${activeTab === 'layers' ? 'active' : ''}`}
+              onClick={() => setActiveTab('layers')}
+            >
+              Couches
+            </button>
+            <button 
+              className={`tab ${activeTab === 'poi' ? 'active' : ''}`}
+              onClick={() => setActiveTab('poi')}
+            >
+              Points d'intérêt
+            </button>
+            <button 
+              className={`tab ${activeTab === 'save' ? 'active' : ''}`}
+              onClick={() => setActiveTab('save')}
             >
               Sauvegarder
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Formulaire d'édition de POI */}
-      {showEditForm && (
-        <div className="edit-overlay">
-          <div className="edit-form">
-            <div className="edit-header">
-              <h3>Éditer le point d'intérêt</h3>
-              <button className="close-edit-form" onClick={closeEditForm}>x</button>
+          
+          <div className={`tab-content ${activeTab === 'layers' ? 'active' : ''}`}>
+            <div className="upload-container-sidebar">
+              <input 
+                type="file" 
+                id="geojson-upload" 
+                className="file-input" 
+                accept=".geojson,.json" 
+                onChange={handleFileUpload} 
+                multiple
+              />
             </div>
-            <div className="edit-content">
-              <div className="form-group">
-                <label>Nom</label>
-                <input 
-                  type="text" 
-                  value={editedPOIData.name} 
-                  onChange={(e) => setEditedPOIData({...editedPOIData, name: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea 
-                  value={editedPOIData.description} 
-                  onChange={(e) => setEditedPOIData({...editedPOIData, description: e.target.value})}
-                  rows="3"
-                ></textarea>
-              </div>
-              <div className="form-group">
-                <label>Pictogramme</label>
-                <div 
-                  className="pictogram-preview" 
-                  onClick={openPictogramMenu}
-                  title="Cliquez pour changer de pictogramme"
+            
+            {loadedLayers.length > 0 && (
+              <>
+                <ul>
+              {loadedLayers.map((layer, index) => (
+                <li 
+                  key={layer.sourceId} 
+                  className={`layer-item ${draggedLayer === layer.sourceId ? 'dragging' : ''}`}
+                  ref={element => {
+                    if (element) {
+                      layerRefs.current.set(layer.sourceId, element);
+                      
+                      // Configurer le drag-and-drop pour cet élément
+                      const dragCleanup = initDragElement(element, layer, index);
+                      
+                      // Configurer la zone de drop pour cet élément
+                      const dropCleanup = dropTargetForElements({
+                        element,
+                        canDrop: ({ source }) => source.data?.instanceId === instanceId,
+                        getData: ({ input }) => {
+                          return attachClosestEdge(
+                            { layer, index, instanceId },
+                            {
+                              element,
+                              input,
+                              allowedEdges: ['top', 'bottom']
+                            }
+                          );
+                        },
+                        onDragStart: () => setDraggedLayer(layer.sourceId),
+                        onDragEnter: ({ self }) => {
+                          const edge = extractClosestEdge(self.data);
+                          setHoveredEdge({ layerId: layer.sourceId, edge });
+                        },
+                        onDrag: ({ self }) => {
+                          const edge = extractClosestEdge(self.data);
+                          setHoveredEdge({ layerId: layer.sourceId, edge });
+                        },
+                        onDragLeave: () => {
+                          setHoveredEdge({ layerId: null, edge: null });
+                        }
+                      });
+
+                      // Enregistrer les fonctions de nettoyage
+                      element.cleanup = combine(dragCleanup, dropCleanup);
+                      
+                      return () => {
+                        if (element.cleanup) {
+                          element.cleanup();
+                        }
+                      };
+                    }
+                  }}
                 >
-                  {currentEditingPOI.pictogramFile ? (
-                    <img 
-                      src={`/pictogrammes/${currentEditingPOI.pictogramFile}`} 
-                      alt="Pictogramme" 
-                    />
-                  ) : (
-                    <div className="no-pictogram">Aucun pictogramme sélectionné</div>
+                  <div className="layer-info">
+                    <span className="layer-name">
+                      <span className="drag-handle" title="Glisser pour réordonner">☰</span>
+                      {layer.fileName}
+                    </span>
+                    <div className="layer-controls">
+                      <input 
+                        type="color" 
+                        value={layer.color}
+                        onChange={(e) => changeLayerColor(layer, e.target.value)}
+                        className="color-picker"
+                        title="Changer la couleur"
+                      />
+                      <div className="opacity-control">
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="100" 
+                          value={opacityInputs[layer.sourceId] !== undefined 
+                            ? opacityInputs[layer.sourceId] 
+                            : Math.round((layer.opacity || defaultOpacity) * 100)}
+                          onChange={(e) => handleOpacityInputChange(layer, e.target.value)}
+                          onBlur={() => handleOpacityInputBlur(layer)}
+                          className="opacity-input"
+                          title="Ajuster l'opacité (0-100)"
+                        />
+                        <span className="opacity-label">%</span>
+                      </div>
+                      <button 
+                        onClick={() => removeLayer(layer)} 
+                        className="remove-layer"
+                        title="Supprimer la couche"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                  {hoveredEdge.layerId === layer.sourceId && (
+                    <div className={`drop-indicator ${hoveredEdge.edge}`}></div>
                   )}
-                </div>
-              </div>
-              <div className="form-actions">
-                <button className="cancel-btn" onClick={closeEditForm}>Annuler</button>
-                <button className="save-btn" onClick={handleSavePOI}>Enregistrer</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Menu de pictogrammes */}
-      {showPictoMenu && (
-        <div className="pictogram-overlay">
-          <div className="pictogram-menu">
-            <div className="pictogram-header">
-              <h3>Choisir un pictogramme</h3>
-              <button className="close-picto-menu" onClick={closePictoMenu}>x</button>
-            </div>
-            <div className="pictogram-grid">
-              {availablePictograms.map(pictogram => (
-                <div 
-                  key={pictogram.id} 
-                  className="pictogram-item" 
-                  onClick={() => handlePictogramSelect(pictogram)}
-                  title={pictogram.name}
-                >
-                  <img 
-                    src={`/pictogrammes/${pictogram.file}`} 
-                    alt={pictogram.name} 
-                  />
-                  <div className="pictogram-name">{pictogram.name}</div>
-                </div>
+                </li>
               ))}
+                </ul>
+              </>
+            )}
+          </div>
+          <div className={`tab-content ${activeTab === 'poi' ? 'active' : ''}`}>
+            {pointsOfInterest.length > 0 ? (
+              <div className="poi-groups">
+                {/* Regrouper les points par fichier source */}
+                {Object.entries(
+                  pointsOfInterest.reduce((groups, point) => {
+                    const source = point.sourceFile;
+                    if (!groups[source]) groups[source] = [];
+                    groups[source].push(point);
+                    return groups;
+                  }, {})
+                ).map(([sourceFile, points]) => (
+                  <div key={sourceFile} className="poi-source-group">
+                    <h4 className="poi-source-title">{sourceFile}</h4>
+                    <ul className="poi-list">
+                      {points.map(point => (
+                        <li key={point.id} className="poi-item">
+                          <div className="poi-header">
+                            <span className="poi-name">
+                              {point.name || point.properties?.name || "Point sans nom"}
+                            </span>
+                            <button 
+                              className="edit-poi-btn" 
+                              title="Éditer ce point"
+                              onClick={() => handleEditPOI(point)}
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                          <div className="poi-coords">
+                            <div>
+                              Lg: {point.coordinates[0].toFixed(5)}
+                            </div>
+                            <div>
+                              Lt: {point.coordinates[1].toFixed(5)}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Aucun point d'intérêt trouvé. Importez des fichiers GeoJSON contenant des points.</p>
+            )}
+          </div>
+          <div className={`tab-content ${activeTab === 'save' ? 'active' : ''}`}>
+            <div className="save-section">
+              <button 
+                className="save-main-btn" 
+                onClick={handleSave}
+              >
+                Sauvegarder
+              </button>
             </div>
           </div>
         </div>
-      )}
 
-      <div ref={mapContainer} className="map-container" />
+        {/* Formulaire d'édition de POI */}
+        {showEditForm && (
+          <div className="edit-overlay">
+            <div className="edit-form">
+              <div className="edit-header">
+                <h3>Éditer le point d'intérêt</h3>
+                <button className="close-edit-form" onClick={closeEditForm}>x</button>
+              </div>
+              <div className="edit-content">
+                <div className="form-group">
+                  <label>Nom</label>
+                  <input 
+                    type="text" 
+                    value={editedPOIData.name} 
+                    onChange={(e) => setEditedPOIData({...editedPOIData, name: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea 
+                    value={editedPOIData.description} 
+                    onChange={(e) => setEditedPOIData({...editedPOIData, description: e.target.value})}
+                    rows="3"
+                  ></textarea>
+                </div>
+                <div className="form-group">
+                  <label>Pictogramme</label>
+                  <div 
+                    className="pictogram-preview" 
+                    onClick={openPictogramMenu}
+                    title="Cliquez pour changer de pictogramme"
+                  >
+                    {currentEditingPOI.pictogramFile ? (
+                      <img 
+                        src={`/pictogrammes/${currentEditingPOI.pictogramFile}`} 
+                        alt="Pictogramme" 
+                      />
+                    ) : (
+                      <div className="no-pictogram">Aucun pictogramme sélectionné</div>
+                    )}
+                  </div>
+                </div>
+                <div className="form-actions">
+                  <button className="cancel-btn" onClick={closeEditForm}>Annuler</button>
+                  <button className="save-btn" onClick={handleSavePOI}>Enregistrer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Menu de pictogrammes */}
+        {showPictoMenu && (
+          <div className="pictogram-overlay">
+            <div className="pictogram-menu">
+              <div className="pictogram-header">
+                <h3>Choisir un pictogramme</h3>
+                <button className="close-picto-menu" onClick={closePictoMenu}>x</button>
+              </div>
+              <div className="pictogram-grid">
+                {availablePictograms.map(pictogram => (
+                  <div 
+                    key={pictogram.id} 
+                    className="pictogram-item" 
+                    onClick={() => handlePictogramSelect(pictogram)}
+                    title={pictogram.name}
+                  >
+                    <img 
+                      src={`/pictogrammes/${pictogram.file}`} 
+                      alt={pictogram.name} 
+                    />
+                    <div className="pictogram-name">{pictogram.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={mapContainer} className="map-container" />
+      </div>
     </div>
   )
 }

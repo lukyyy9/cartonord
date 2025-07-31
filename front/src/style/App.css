@@ -88,9 +88,9 @@ button:focus-visible {
 
 .map-container {
   width: 100vw;
-  height: 100vh;
+  height: 80vh;
   position: absolute;
-  top: 0;
+  top: 60px;
   left: 0;
   border-radius: 0;
   margin: 0;
@@ -563,6 +563,162 @@ button:focus-visible {
 
 .save-btn:hover {
   background-color: #5ba5ff;
+}
+
+/* Styles pour la page de connexion */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-form {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-form h1 {
+  text-align: center;
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 28px;
+}
+
+.login-form p {
+  text-align: center;
+  margin: 0 0 30px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #5a6fd8;
+}
+
+.login-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #fcc;
+  text-align: center;
+}
+
+/* Header administrateur */
+.admin-header {
+  background: #333;
+  color: white;
+  padding: 0 20px;
+  border-bottom: 3px solid #667eea;
+}
+
+.admin-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 60px;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-user-info span {
+  font-size: 14px;
+  color: #ccc;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+}
+
+/* Loading spinner */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  font-size: 18px;
+  color: #667eea;
 }
 
 /* Styles pour la page User */
