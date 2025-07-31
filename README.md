@@ -25,7 +25,7 @@ This project consists of 4 microservices:
 
 To run the application, simply run the following command :
 
-`docker-compose up -d'
+`docker-compose up -d`
 
 ## API Endpoints
 
