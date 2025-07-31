@@ -21,52 +21,11 @@ This project consists of 4 microservices:
 - PostgreSQL + PostGIS for geospatial data storage
 - Docker containerized deployment
 
-## Quick Start
+## Run the application
 
-1. **Clone and setup**
+To run the application, simply run the following command :
 
-   ```bash
-   git clone <repository-url>
-   cd cartonord
-   ```
-
-2. **Run with Docker**
-
-   ```bash
-   docker-compose up --build
-   ```
-
-3. **Access the application**
-
-   - Frontend: <http://localhost:5173>
-   - Backend API: <http://localhost:3001>
-   - Tile Server: <http://localhost:3003>
-
-## Development
-
-### Frontend
-
-```bash
-cd front
-npm install
-npm run dev
-```
-
-### Backend
-
-```bash
-cd back
-npm install
-npm run dev
-```
-
-### Tile Server
-
-```bash
-cd tile-server
-npm install
-npm run dev
-```
+`docker-compose up -d'
 
 ## API Endpoints
 
@@ -77,6 +36,13 @@ npm run dev
 - `PUT /api/projects/:id/style` - Update styling
 - `POST /api/projects/:id/generate-tileset` - Generate vector tiles
 
+### Tiler (Port 3002)
+
+- `POST /generate` - Generate tileset from uploaded GeoJSON file
+- `POST /generate-from-data` - Generate tileset from GeoJSON data in request body
+- `GET /project/:projectId` - List all tilesets for a project
+- `DELETE /:tilesetId` - Delete a specific tileset
+
 ### Tile Server (Port 3003)
 
 - `GET /tiles/{project-id}/{z}/{x}/{y}.pbf` - Serve vector tiles
@@ -85,11 +51,10 @@ npm run dev
 
 ## Tech Stack
 
-- **Frontend**: React, MapLibre GL JS, Vite
+- **Frontend**: React, MapLibre GL JS, Vite, Nginx
 - **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL + PostGIS
-- **Tile Generation**: Tippecanoe
-- **Containerization**: Docker, Docker Compose
+- **Database**: PostgreSQL w/ PostGIS
+- **Tile Generation**: Node.js, Tippecanoe
 
 ## Environment Variables
 
