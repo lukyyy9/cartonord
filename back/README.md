@@ -54,16 +54,16 @@ psql cartonord -c "CREATE EXTENSION postgis;"
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/cartonord
-DB_HOST=localhost
+DATABASE_URL=postgresql://cartonord_user:cartonord_password@postgres:5432/cartonord
+DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=cartonord
-DB_USER=cartonord
-DB_PASSWORD=password
+DB_USER=cartonord_user
+DB_PASSWORD=cartonord_password
 
 # Services
-TILER_SERVICE_URL=http://localhost:3002
-TILE_SERVER_URL=http://localhost:3003
+TILER_SERVICE_URL=http://host.docker.internal:3002
+TILE_SERVER_URL=http://host.docker.internal:3003
 PORT=3001
 
 # Storage
@@ -73,6 +73,9 @@ CACHE_DIRECTORY=/data/cache
 # Environment
 NODE_ENV=development
 LOG_LEVEL=info
+
+# CORS
+CORS_ORIGIN=*
 ```
 
 ## API Endpoints

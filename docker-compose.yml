@@ -15,6 +15,11 @@ services:
       - "5432:5432"
     networks:
       - cartonord-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cartonord_user -d cartonord"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Backend API
   backend:
@@ -30,10 +35,14 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - postgres
-      - tiler
+      postgres:
+        condition: service_healthy
+      tiler:
+        condition: service_started
     networks:
       - cartonord-network
+    restart: unless-stopped
+
 
   # Service de génération de tilesets
   tiler:
