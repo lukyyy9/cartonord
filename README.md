@@ -102,3 +102,7 @@ Check individual service README files for specific configuration options.
 3. Tiler service generates MBTiles using Tippecanoe
 4. Tile server serves vector tiles to map clients
 5. Frontend displays styled maps using
+
+## Licenses
+
+[LICENSE.md](./assets/LICENSE.md) contains the full license information for this project, including third-party components like Tippecanoe.
