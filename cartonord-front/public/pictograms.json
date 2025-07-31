@@ -1,0 +1,284 @@
+{
+  "pictograms": [
+    {
+      "id": "aire_camping_car",
+      "name": "Aire de camping-car",
+      "file": "aire_camping_car@4x.png"
+    },
+    {
+      "id": "aire_de_jeux",
+      "name": "Aire de jeux",
+      "file": "aire_de_jeux@4x.png"
+    },
+    {
+      "id": "aire_pique_nique",
+      "name": "Aire de pique-nique",
+      "file": "aire_pique_nique@4x.png"
+    },
+    {
+      "id": "arret_bus",
+      "name": "Arrêt de bus",
+      "file": "arret_bus@4x.png"
+    },
+    {
+      "id": "autre_lieux",
+      "name": "Autres lieux",
+      "file": "autre_lieux@4x.png"
+    },
+    {
+      "id": "bars",
+      "name": "Bar",
+      "file": "bars@4x.png"
+    },
+    {
+      "id": "borne_recharge",
+      "name": "Borne de recharge",
+      "file": "borne_recharge@4x.png"
+    },
+    {
+      "id": "boulodrome",
+      "name": "Boulodrome",
+      "file": "boulodrome@4x.png"
+    },
+    {
+      "id": "camping",
+      "name": "Camping",
+      "file": "camping@4x.png"
+    },
+    {
+      "id": "capitainerie",
+      "name": "Capitainerie",
+      "file": "capitainerie@4x.png"
+    },
+    {
+      "id": "centre_culturel",
+      "name": "Centre culturel",
+      "file": "centre_culturel@4x.png"
+    },
+    {
+      "id": "centre_equestre",
+      "name": "Centre équestre",
+      "file": "centre_equestre@4x.png"
+    },
+    {
+      "id": "centre_medical",
+      "name": "Centre médical",
+      "file": "centre_medical@4x.png"
+    },
+    {
+      "id": "cimetiere",
+      "name": "Cimetière",
+      "file": "cimetiere@4x.png"
+    },
+    {
+      "id": "cinema",
+      "name": "Cinéma",
+      "file": "cinema@4x.png"
+    },
+    {
+      "id": "city_stade",
+      "name": "City stade",
+      "file": "city_stade@4x.png"
+    },
+    {
+      "id": "commerce",
+      "name": "Commerce",
+      "file": "commerce@4x.png"
+    },
+    {
+      "id": "creche",
+      "name": "Crèche",
+      "file": "creche@4x.png"
+    },
+    {
+      "id": "curiosite",
+      "name": "Curiosité",
+      "file": "curiosite@4x.png"
+    },
+    {
+      "id": "dechet_vert",
+      "name": "Déchets verts",
+      "file": "dechet_vert@4x.png"
+    },
+    {
+      "id": "dechetterie",
+      "name": "Déchetterie",
+      "file": "dechetterie@4x.png"
+    },
+    {
+      "id": "defibrillateur",
+      "name": "Défibrillateur",
+      "file": "defibrillateur@4x.png"
+    },
+    {
+      "id": "distributeur_billet",
+      "name": "Distributeur de billets",
+      "file": "distributeur_billet@4x.png"
+    },
+    {
+      "id": "ecole_musique",
+      "name": "École de musique",
+      "file": "ecole_musique@4x.png"
+    },
+    {
+      "id": "ecole",
+      "name": "École",
+      "file": "ecole@4x.png"
+    },
+    {
+      "id": "edifice_religieux",
+      "name": "Édifice religieux",
+      "file": "edifice_religieux@4x.png"
+    },
+    {
+      "id": "essence",
+      "name": "Essence",
+      "file": "essence@4x.png"
+    },
+    {
+      "id": "fontaine",
+      "name": "Fontaine",
+      "file": "fontaine@4x.png"
+    },
+    {
+      "id": "gite_hote",
+      "name": "Gîte d'hôte",
+      "file": "gite_hote@4x.png"
+    },
+    {
+      "id": "hotel",
+      "name": "Hôtel",
+      "file": "hotel@4x.png"
+    },
+    {
+      "id": "loti_residence",
+      "name": "Loti résidence",
+      "file": "loti_residence@4x.png"
+    },
+    {
+      "id": "mairie_1",
+      "name": "Mairie 1",
+      "file": "mairie_1@4x.png"
+    },
+    {
+      "id": "mise_a_leau",
+      "name": "Mise à l'eau",
+      "file": "mise_a_leau@4x.png"
+    },
+    {
+      "id": "monument_aux_morts",
+      "name": "Monument aux morts",
+      "file": "monument_aux_morts@4x.png"
+    },
+    {
+      "id": "office_de_tourisme",
+      "name": "Office de tourisme",
+      "file": "office_de_tourisme@4x.png"
+    },
+    {
+      "id": "oratoire",
+      "name": "Oratoire",
+      "file": "oratoire@4x.png"
+    },
+    {
+      "id": "panorama",
+      "name": "Panorama",
+      "file": "panorama@4x.png"
+    },
+    {
+      "id": "parcours_sante",
+      "name": "Parcours santé",
+      "file": "parcours_sante@4x.png"
+    },
+    {
+      "id": "parking",
+      "name": "Parking",
+      "file": "parking@4x.png"
+    },
+    {
+      "id": "parking_velo",
+      "name": "Parking vélo",
+      "file": "parking_velo@4x.png"
+    },
+    {
+      "id": "pharmacie",
+      "name": "Pharmacie",
+      "file": "pharmacie@4x.png"
+    },
+    {
+      "id": "piscine",
+      "name": "Piscine",
+      "file": "piscine@4x.png"
+    },
+    {
+      "id": "piste_cyclable",
+      "name": "Piste cyclable",
+      "file": "piste_cyclable@4x.png"
+    },
+    {
+      "id": "pmr",
+      "name": "PMR",
+      "file": "pmr@4x.png"
+    },
+    {
+      "id": "police_gendarmerie",
+      "name": "Police / Gendarmerie",
+      "file": "police_gendarmerie@4x.png"
+    },
+    {
+      "id": "poste",
+      "name": "Poste",
+      "file": "poste@4x.png"
+    },
+    {
+      "id": "randonnee",
+      "name": "Randonnée",
+      "file": "randonnee@4x.png"
+    },
+    {
+      "id": "residence_tourisme",
+      "name": "Résidence de tourisme",
+      "file": "residence_tourisme@4x.png"
+    },
+    {
+      "id": "restaurant",
+      "name": "Restaurant",
+      "file": "restaurant@4x.png"
+    },
+    {
+      "id": "skate_park",
+      "name": "Skate Park",
+      "file": "skate_park@4x.png"
+    },
+    {
+      "id": "stade",
+      "name": "Stade",
+      "file": "stade@4x.png"
+    },
+    {
+      "id": "supermarche",
+      "name": "Supermarché",
+      "file": "supermarche@4x.png"
+    },
+    {
+      "id": "taxi",
+      "name": "Taxi",
+      "file": "taxi@4x.png"
+    },
+    {
+      "id": "tennis",
+      "name": "Tennis",
+      "file": "tennis@4x.png"
+    },
+    {
+      "id": "toilettes",
+      "name": "Toilettes",
+      "file": "toilettes@4x.png"
+    },
+    {
+      "id": "vigne_culture",
+      "name": "Vigne / Culture",
+      "file": "vigne_culture@4x.png"
+    }
+  ]
+}

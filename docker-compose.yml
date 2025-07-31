@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL avec PostGIS
+  postgres:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_DB: cartonord
+      POSTGRES_USER: cartonord_user
+      POSTGRES_PASSWORD: cartonord_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - cartonord-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./cartonord-back
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://cartonord_user:cartonord_password@postgres:5432/cartonord
+      TILER_SERVICE_URL: http://tiler:3002
+    volumes:
+      - shared_data:/data
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - tiler
+    networks:
+      - cartonord-network
+
+  # Service de génération de tilesets
+  tiler:
+    build:
+      context: ./cartonord-tiler
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+    volumes:
+      - shared_data:/data
+    ports:
+      - "3002:3002"
+    networks:
+      - cartonord-network
+
+  # Serveur de tuiles vectorielles
+  tile-server:
+    build:
+      context: ./cartonord-tile-server
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      TILES_DIRECTORY: /data/tilesets
+    volumes:
+      - shared_data:/data
+    ports:
+      - "3003:3003"
+    depends_on:
+      - tiler
+    networks:
+      - cartonord-network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./cartonord-front
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - tile-server
+    networks:
+      - cartonord-network
+
+volumes:
+  postgres_data:
+  shared_data:
+
+networks:
+  cartonord-network:
+    driver: bridge
