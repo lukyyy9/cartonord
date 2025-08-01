@@ -8,6 +8,12 @@ const AdminHomepage = () => {
   const [selectedMap, setSelectedMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    slug: ''
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +84,69 @@ const AdminHomepage = () => {
         alert('Erreur lors de la suppression : ' + err.message);
       }
     }
+  };
+
+  const handleEditMapInfo = (map) => {
+    setEditFormData({
+      name: map.name || '',
+      description: map.description || '',
+      slug: map.slug || generateSlug(map.name || '')
+    });
+    setShowEditModal(true);
+  };
+
+  const generateSlug = (name) => {
+    return name.toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Supprimer les caractères spéciaux
+      .replace(/\s+/g, '-') // Remplacer les espaces par des tirets
+      .replace(/-+/g, '-') // Éviter les tirets multiples
+      .trim();
+  };
+
+  const handleSlugChange = (value) => {
+    const slug = generateSlug(value);
+    setEditFormData(prev => ({ ...prev, slug }));
+  };
+
+  const handleSaveMapInfo = async () => {
+    if (!selectedMap || !editFormData.name.trim()) {
+      alert('Le nom de la carte est obligatoire');
+      return;
+    }
+
+    try {
+      const response = await apiService.patch(`/api/maps/${selectedMap.id}/metadata`, {
+        name: editFormData.name.trim(),
+        description: editFormData.description.trim(),
+        slug: editFormData.slug.trim()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour');
+      }
+
+      const updatedMap = await response.json();
+      
+      // Mettre à jour la liste des cartes
+      setMaps(maps.map(map => 
+        map.id === selectedMap.id ? updatedMap : map
+      ));
+      
+      // Mettre à jour la carte sélectionnée
+      setSelectedMap(updatedMap);
+      
+      // Fermer la modal
+      setShowEditModal(false);
+      
+      alert('Informations mises à jour avec succès !');
+    } catch (err) {
+      alert('Erreur lors de la mise à jour : ' + err.message);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditFormData({ name: '', description: '', slug: '' });
   };
 
   const getStatusColor = (status) => {
@@ -188,6 +257,12 @@ const AdminHomepage = () => {
               <div className="details-header">
                 <h2>{selectedMap.name}</h2>
                 <div className="map-actions">
+                  <button
+                    className="edit-info-btn"
+                    onClick={() => handleEditMapInfo(selectedMap)}
+                  >
+                    Modifier informations
+                  </button>
                   <button
                     className="edit-btn"
                     onClick={() => handleEditMap(selectedMap.id)}
@@ -334,6 +409,76 @@ const AdminHomepage = () => {
           )}
         </div>
       </div>
+
+      {/* Modal d'édition des métadonnées */}
+      {showEditModal && (
+        <div className="edit-modal-overlay">
+          <div className="edit-modal">
+            <div className="edit-modal-header">
+              <h3>Modifier les informations de la carte</h3>
+              <button className="close-modal-btn" onClick={handleCloseEditModal}>×</button>
+            </div>
+            
+            <div className="edit-modal-body">
+              <div className="form-group">
+                <label htmlFor="map-name">Nom de la carte *</label>
+                <input
+                  type="text"
+                  id="map-name"
+                  value={editFormData.name}
+                  onChange={(e) => {
+                    setEditFormData(prev => ({ ...prev, name: e.target.value }));
+                    handleSlugChange(e.target.value);
+                  }}
+                  placeholder="Nom de votre carte"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="map-description">Description</label>
+                <textarea
+                  id="map-description"
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Description de votre carte"
+                  rows="4"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="map-slug">Slug (URL)</label>
+                <input
+                  type="text"
+                  id="map-slug"
+                  value={editFormData.slug}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  placeholder="slug-de-votre-carte"
+                />
+                <small className="help-text">
+                  Le slug est utilisé dans l'URL de votre carte. Il est généré automatiquement à partir du nom.
+                </small>
+              </div>
+            </div>
+            
+            <div className="edit-modal-footer">
+              <button 
+                className="cancel-btn" 
+                onClick={handleCloseEditModal}
+              >
+                Annuler
+              </button>
+              <button 
+                className="save-btn" 
+                onClick={handleSaveMapInfo}
+                disabled={!editFormData.name.trim()}
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
