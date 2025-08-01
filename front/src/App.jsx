@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './admin/Login';
+import AdminHomepage from './admin/AdminHomepage';
 import MapEditor from './admin/MapEditor';
 import RoquefortLesPins from './user/RoquefortLesPins';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,6 +15,11 @@ function App() {
         <Routes>
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminHomepage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/editor/:mapId" element={
             <ProtectedRoute>
               <MapEditor />
             </ProtectedRoute>

@@ -676,9 +676,42 @@ button:focus-visible {
   height: 60px;
 }
 
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .admin-header h1 {
   margin: 0;
   font-size: 24px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.back-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background: #0056b3;
+}
+
+.current-map {
+  color: #ccc;
+  font-style: italic;
 }
 
 .admin-user-info {
