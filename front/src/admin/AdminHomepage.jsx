@@ -62,6 +62,25 @@ const AdminHomepage = () => {
     navigate(`/admin/editor/${mapId}`);
   };
 
+  const handleDeleteMap = async (mapId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette carte ? Cette action est irréversible.')) {
+      try {
+        const response = await apiService.delete(`/api/maps/${mapId}`);
+        if (!response.ok) {
+          throw new Error('Erreur lors de la suppression');
+        }
+        // Retirer la carte de la liste
+        setMaps(maps.filter(map => map.id !== mapId));
+        // Désélectionner si c'était la carte sélectionnée
+        if (selectedMap && selectedMap.id === mapId) {
+          setSelectedMap(null);
+        }
+      } catch (err) {
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusColors = {
       draft: '#ffa500',
@@ -164,18 +183,6 @@ const AdminHomepage = () => {
                       {map.description}
                     </div>
                   )}
-
-                  <div className="map-actions">
-                    <button
-                      className="edit-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditMap(map.id);
-                      }}
-                    >
-                      Éditer
-                    </button>
-                  </div>
                 </div>
               ))
             )}
@@ -185,9 +192,147 @@ const AdminHomepage = () => {
         <div className="map-details">
           {selectedMap ? (
             <div className="details-content">
-              <h2>{selectedMap.name}</h2>
-              <p>Détails de la carte</p>
-              {/* TODO: Implémenter les détails de la carte */}
+              <div className="details-header">
+                <h2>{selectedMap.name}</h2>
+                <div className="map-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditMap(selectedMap.id)}
+                  >
+                    Éditer la carte
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDeleteMap(selectedMap.id)}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+
+              <div className="details-body">
+                <div className="detail-section">
+                  <h3>Informations générales</h3>
+                  <div className="detail-item">
+                    <label>Statut :</label>
+                    <span 
+                      className="status-badge"
+                      style={{ backgroundColor: getStatusColor(selectedMap.status) }}
+                    >
+                      {getStatusLabel(selectedMap.status)}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Créée le :</label>
+                    <span>{formatDate(selectedMap.created_at)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Modifiée le :</label>
+                    <span>{formatDate(selectedMap.updated_at)}</span>
+                  </div>
+                  {selectedMap.description && (
+                    <div className="detail-item">
+                      <label>Description :</label>
+                      <span>{selectedMap.description}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="detail-section">
+                  <h3>Configuration de la carte</h3>
+                  {selectedMap.config ? (
+                    <>
+                      <div className="detail-item">
+                        <label>Centre :</label>
+                        <span>
+                          [{selectedMap.config.center?.[0]?.toFixed(5)}, {selectedMap.config.center?.[1]?.toFixed(5)}]
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <label>Zoom :</label>
+                        <span>{selectedMap.config.zoom}</span>
+                      </div>
+                      <div className="detail-item">
+                        <label>Zoom min/max :</label>
+                        <span>{selectedMap.config.minZoom} - {selectedMap.config.maxZoom}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="no-data">Aucune configuration disponible</p>
+                  )}
+                </div>
+
+                <div className="detail-section">
+                  <h3>Couches ({selectedMap.layers?.length || 0})</h3>
+                  {selectedMap.layers && selectedMap.layers.length > 0 ? (
+                    <div className="layers-summary">
+                      {selectedMap.layers.map((layer, index) => (
+                        <div key={layer.id || index} className="layer-summary">
+                          <div className="layer-summary-header">
+                            <span className="layer-name">{layer.name || layer.fileName || `Couche ${index + 1}`}</span>
+                            <span className="layer-type">{layer.layerType || 'mixed'}</span>
+                          </div>
+                          <div className="layer-summary-details">
+                            <span>Z-index: {layer.z_index || index}</span>
+                            {layer.style && (
+                              <span style={{ 
+                                backgroundColor: layer.style.color || '#ccc',
+                                color: 'white',
+                                padding: '2px 6px',
+                                borderRadius: '3px',
+                                fontSize: '0.8em'
+                              }}>
+                                Couleur
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="no-data">Aucune couche définie</p>
+                  )}
+                </div>
+
+                <div className="detail-section">
+                  <h3>Points d'intérêt ({selectedMap.pointsOfInterest?.length || 0})</h3>
+                  {selectedMap.pointsOfInterest && selectedMap.pointsOfInterest.length > 0 ? (
+                    <div className="poi-summary">
+                      {selectedMap.pointsOfInterest.slice(0, 5).map((poi, index) => (
+                        <div key={poi.id || index} className="poi-summary-item">
+                          <span className="poi-name">{poi.name || `Point ${index + 1}`}</span>
+                          <span className="poi-coords">
+                            [{poi.coordinates?.[0]?.toFixed(3)}, {poi.coordinates?.[1]?.toFixed(3)}]
+                          </span>
+                        </div>
+                      ))}
+                      {selectedMap.pointsOfInterest.length > 5 && (
+                        <div className="poi-more">
+                          Et {selectedMap.pointsOfInterest.length - 5} autre(s)...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="no-data">Aucun point d'intérêt défini</p>
+                  )}
+                </div>
+
+                {selectedMap.tilesetPath && (
+                  <div className="detail-section">
+                    <h3>Tileset</h3>
+                    <div className="detail-item">
+                      <label>Fichier :</label>
+                      <span className="tileset-path">{selectedMap.tilesetPath}</span>
+                    </div>
+                    {selectedMap.tilesetId && (
+                      <div className="detail-item">
+                        <label>ID :</label>
+                        <span>{selectedMap.tilesetId}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="no-selection">
