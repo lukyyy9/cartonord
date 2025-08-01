@@ -243,6 +243,7 @@ const AdminHomepage = () => {
             <div className="details-content">
               <div className="details-header">
                 <h2>{selectedMap.name}</h2>
+              </div>
                 <div className="map-actions">
                   <button
                     className="edit-info-btn"
@@ -263,7 +264,6 @@ const AdminHomepage = () => {
                     Supprimer
                   </button>
                 </div>
-              </div>
 
               <div className="details-body">
                 <div className="detail-section">
@@ -276,6 +276,10 @@ const AdminHomepage = () => {
                     >
                       {getStatusLabel(selectedMap.status)}
                     </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Slug :</label>
+                    <span>/{selectedMap.slug || 'non-défini'}</span>
                   </div>
                   <div className="detail-item">
                     <label>Créée le :</label>

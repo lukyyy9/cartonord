@@ -242,6 +242,8 @@
 .map-actions {
   display: flex;
   gap: 0.5rem;
+  background-color: #B8D8D8;
+  padding: 0.5rem ;
 }
 
 .edit-btn {
