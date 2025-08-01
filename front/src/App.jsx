@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Login from './admin/Login';
 import AdminHomepage from './admin/AdminHomepage';
 import MapEditor from './admin/MapEditor';
-import RoquefortLesPins from './user/MapViewer';
+import MapViewer from './user/MapViewer';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -23,8 +23,10 @@ function App() {
               <MapEditor />
             </ProtectedRoute>
           } />
-          <Route path="/roquefort-les-pins" element={<RoquefortLesPins />} />
-          <Route path="/" element={<RoquefortLesPins />} />
+          {/* Route dynamique pour les cartes publiées via slug */}
+          <Route path="/:slug" element={<MapViewer />} />
+          {/* Route par défaut - peut-être une page d'accueil */}
+          <Route path="/" element={<div>Page d'accueil - Cartonord</div>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

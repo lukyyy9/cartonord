@@ -1,17 +1,41 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { getMapBySlug } from '../services/publicApi';
 
-function RoquefortLesPins() {
+function MapViewer() {
+  const { slug } = useParams();
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const [mapData, setMapData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // ID de la carte en dur pour le moment
-  const PROJECT_ID = 'ad386d03-509f-457d-b764-bfd63e7a503b';
   const TILE_SERVER_URL = 'http://localhost:3003';
 
+  // Récupérer les données de la carte via le slug
   useEffect(() => {
-    if (map.current) return; // Initialiser la carte une seule fois
+    const fetchMapData = async () => {
+      try {
+        setLoading(true);
+        const data = await getMapBySlug(slug);
+        setMapData(data);
+      } catch (err) {
+        console.error('Erreur lors de la récupération de la carte:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchMapData();
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    if (!mapData || map.current) return; // Attendre les données et initialiser la carte une seule fois
 
     // Configuration du style MapLibre avec les tuiles vectorielles Cartonord
     const mapStyle = {
@@ -19,7 +43,7 @@ function RoquefortLesPins() {
       sources: {
         'cartonord-tiles': {
           type: 'vector',
-          tiles: [`${TILE_SERVER_URL}/tiles/${PROJECT_ID}/{z}/{x}/{y}.pbf`],
+          tiles: [`${TILE_SERVER_URL}/tiles/${mapData.id}/{z}/{x}/{y}.pbf`],
           minzoom: 0,
           maxzoom: 18
         }
@@ -38,7 +62,7 @@ function RoquefortLesPins() {
           id: 'polygon-fill',
           type: 'fill',
           source: 'cartonord-tiles',
-          'source-layer': `map-${PROJECT_ID}`,
+          'source-layer': `map-${mapData.id}`,
           filter: ['==', '$type', 'Polygon'],
           paint: {
             'fill-color': ['get', 'color'],
@@ -49,7 +73,7 @@ function RoquefortLesPins() {
           id: 'polygon-stroke',
           type: 'line',
           source: 'cartonord-tiles',
-          'source-layer': `map-${PROJECT_ID}`,
+          'source-layer': `map-${mapData.id}`,
           filter: ['==', '$type', 'Polygon'],
           paint: {
             'line-color': ['get', 'color'],
@@ -62,7 +86,7 @@ function RoquefortLesPins() {
           id: 'line',
           type: 'line',
           source: 'cartonord-tiles',
-          'source-layer': `map-${PROJECT_ID}`,
+          'source-layer': `map-${mapData.id}`,
           filter: ['==', '$type', 'LineString'],
           paint: {
             'line-color': ['get', 'color'],
@@ -75,7 +99,7 @@ function RoquefortLesPins() {
           id: 'point',
           type: 'circle',
           source: 'cartonord-tiles',
-          'source-layer': `map-${PROJECT_ID}`,
+          'source-layer': `map-${mapData.id}`,
           filter: ['==', '$type', 'Point'],
           paint: {
             'circle-color': ['get', 'color'],
@@ -86,11 +110,15 @@ function RoquefortLesPins() {
       ]
     };
 
+    // Utiliser la configuration de la carte ou des valeurs par défaut
+    const center = mapData.config?.center || [7.048, 43.667];
+    const zoom = mapData.config?.zoom || 15;
+
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: mapStyle,
-      center: [7.048, 43.667], // Roquefort-les-Pins
-      zoom: 15
+      center: center,
+      zoom: zoom
     });
 
     // Ajouter les contrôles de navigation
@@ -137,17 +165,54 @@ function RoquefortLesPins() {
       map.current.getCanvas().style.cursor = '';
     });
 
-  }, []);
+  }, [mapData]);
+
+  // Affichage des états de chargement et d'erreur
+  if (loading) {
+    return (
+      <div className="user-map-container">
+        <div className="map-header">
+          <h1>Chargement...</h1>
+          <p>Récupération des données de la carte</p>
+        </div>
+        <div className="loading-placeholder" style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p>Chargement de la carte...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="user-map-container">
+        <div className="map-header">
+          <h1>Erreur</h1>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!mapData) {
+    return (
+      <div className="user-map-container">
+        <div className="map-header">
+          <h1>Carte non trouvée</h1>
+          <p>La carte demandée n'existe pas ou n'est pas publiée</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="user-map-container">
       <div className="map-header">
-        <h1>Roquefort-les-Pins</h1>
-        <p>Carte interactive de la commune</p>
+        <h1>{mapData.name}</h1>
+        {mapData.description && <p>{mapData.description}</p>}
       </div>
       <div ref={mapContainer} className="user-map" />
     </div>
   );
 }
 
-export default RoquefortLesPins;
+export default MapViewer;
