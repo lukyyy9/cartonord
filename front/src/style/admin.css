@@ -351,6 +351,12 @@
   margin-bottom: 0.25rem;
 }
 
+.layer-name {
+    color: #111;
+    font-weight: 500;
+    margin: 0;
+}
+
 .layer-type {
   background-color: #e0e0e0;
   color: #666;
