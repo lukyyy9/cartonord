@@ -6,7 +6,6 @@ import AdminHomepage from './admin/AdminHomepage';
 import MapEditor from './admin/MapEditor';
 import RoquefortLesPins from './user/RoquefortLesPins';
 import ProtectedRoute from './components/ProtectedRoute';
-import './style/App.css';
 
 function App() {
   return (

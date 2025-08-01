@@ -1,0 +1,165 @@
+/* Styles pour la liste des couches */
+.layer-list {
+  position: absolute;
+  top: 70px;
+  left: 10px;
+  background: rgba(36, 36, 36, 0.9);
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 1;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  width: 400px;
+}
+
+.layer-list h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.layer-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.layer-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #4d4d4d;
+}
+
+.layer-info {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.layer-name {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 220px;
+  margin-bottom: 5px;
+  display: flex;
+}
+
+.layer-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.color-picker {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.remove-layer {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Styles pour le drag and drop */
+.layer-item {
+  cursor: grab;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.layer-item.dragging {
+  opacity: 0.5;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.layer-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.drag-handle {
+  cursor: grab;
+  margin-right: 8px;
+  opacity: 0.6;
+  user-select: none;
+}
+
+.layer-item:active .drag-handle {
+  cursor: grabbing;
+}
+
+/* Indicateurs de drop */
+.drop-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #0088ff;
+  z-index: 2;
+}
+
+.drop-indicator.top {
+  top: 0;
+}
+
+.drop-indicator.bottom {
+  bottom: 0;
+}
+
+.upload-container-sidebar {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+/* Styles pour les onglets */
+.tabs {
+  display: flex;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #444;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 8px 15px;
+  color: #fff;
+  cursor: pointer;
+  margin-right: 5px;
+  border-radius: 5px 5px 0 0;
+  flex: 1;
+  text-align: center;
+}
+
+.tab.active {
+  background-color: #4d4d4d;
+  font-weight: bold;
+  border-radius: 5px 5px 0 0;
+}
+
+.tab:hover:not(.active) {
+  background-color: #4d4d4d;
+  border-radius: 5px 5px 0 0;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}

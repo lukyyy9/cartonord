@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import AdminHeader from '../components/AdminHeader';
-import '../style/AdminHomepage.css';
 
 const AdminHomepage = () => {
   const [maps, setMaps] = useState([]);

@@ -1,0 +1,59 @@
+/* Styles pour les points d'intérêt */
+.poi-groups {
+  margin-top: 10px;
+}
+
+.poi-source-group {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.poi-source-title {
+  margin: 0 0 10px 0;
+  font-size: 1em;
+  color: #fff;
+  padding-bottom: 5px;
+}
+
+.poi-list {
+  margin: 0;
+  padding: 0;
+}
+
+.poi-coords {
+  font-size: 0.8em;
+  margin-top: 5px;
+  color: #ddd;
+}
+
+.poi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-poi-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.edit-poi-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Style pour afficher le pictogramme actuel dans la liste des POI */
+.poi-pictogram {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}

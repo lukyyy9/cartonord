@@ -1,0 +1,12 @@
+/* Import de tous les fichiers CSS par composant/page */
+@import './global.css';
+@import './layout.css';
+@import './map.css';
+@import './layers.css';
+@import './poi.css';
+@import './pictograms.css';
+@import './forms.css';
+@import './login.css';
+@import './admin.css';
+@import './user.css';
+@import './components.css';
