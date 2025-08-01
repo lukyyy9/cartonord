@@ -283,7 +283,19 @@ const AdminHomepage = () => {
                       MàJ le {formatDate(map.updatedAt)}
                     </div>
                     <div>
-                      /{map.slug || ''}
+                      {map.slug && map.status === 'published' ? (
+                        <a 
+                          href={`/${map.slug}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="slug-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          /{map.slug}
+                        </a>
+                      ) : (
+                        `/${map.slug || ''}`
+                      )}
                     </div>
                   </div>
                 </div>
@@ -348,7 +360,24 @@ const AdminHomepage = () => {
                   </div>
                   <div className="detail-item">
                     <label>Slug :</label>
-                    <span>/{selectedMap.slug || 'non-défini'}</span>
+                    <span>
+                      {selectedMap.slug ? (
+                        selectedMap.status === 'published' ? (
+                          <a 
+                            href={`/${selectedMap.slug}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="slug-link"
+                          >
+                            /{selectedMap.slug}
+                          </a>
+                        ) : (
+                          `/${selectedMap.slug}`
+                        )
+                      ) : (
+                        'non-défini'
+                      )}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <label>Créée le :</label>
