@@ -88,7 +88,7 @@ button:focus-visible {
 
 .map-container {
   width: 100vw;
-  height: 80vh;
+  height: 100vh;
   position: absolute;
   top: 60px;
   left: 0;
@@ -100,14 +100,13 @@ button:focus-visible {
 
 .layer-list {
   position: absolute;
-  top: 10px;
+  top: 70px;
   left: 10px;
-  background: #242424;
+  background: rgba(36, 36, 36, 0.9);
   padding: 10px;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
   z-index: 1;
-  max-height: 95%;
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
   width: 400px;
 }
@@ -662,17 +661,17 @@ button:focus-visible {
 
 /* Header administrateur */
 .admin-header {
-  background: #333;
+  background: black;
   color: white;
   padding: 0 20px;
-  border-bottom: 3px solid #667eea;
+  z-index: 1000;
 }
 
 .admin-header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
+  max-width: 100vw;
   margin: 0 auto;
   height: 60px;
 }
