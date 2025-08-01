@@ -1,7 +1,7 @@
 /* Styles pour les cartes */
 .map-container {
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 60px);
   position: absolute;
   top: 60px;
   left: 0;

@@ -25,8 +25,6 @@ function App() {
           } />
           {/* Route dynamique pour les cartes publiées via slug */}
           <Route path="/:slug" element={<MapViewer />} />
-          {/* Route par défaut - peut-être une page d'accueil */}
-          <Route path="/" element={<div>Page d'accueil - Cartonord</div>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

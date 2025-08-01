@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 function AdminHeader({ mapName = null }) {
-  const { admin, logout } = useAuth();
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isEditorPage = location.pathname.includes('/admin/editor');
@@ -41,7 +41,6 @@ function AdminHeader({ mapName = null }) {
           )}
         </div>
         <div className="admin-user-info">
-          <span>Connecté en tant que: {admin?.username}</span>
           <button onClick={handleLogout} className="logout-btn">
             Déconnexion
           </button>

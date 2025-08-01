@@ -310,13 +310,16 @@ const AdminHomepage = () => {
               <div className="details-header">
                 <h2>{selectedMap.name}</h2>
               </div>
-                <div className="map-actions">
-                  <button
-                    className="edit-info-btn"
-                    onClick={() => handleEditMapInfo(selectedMap)}
-                  >
-                    Modifier informations
-                  </button>
+              <div className="details-body">
+                <div className="detail-section">
+                  <h3>Actions</h3>
+                  <div className="map-actions">
+                    <button
+                      className="edit-info-btn"
+                      onClick={() => handleEditMapInfo(selectedMap)}
+                    >
+                      Modifier informations
+                    </button>
                   <button
                     className="edit-btn"
                     onClick={() => handleEditMap(selectedMap.id)}
@@ -345,8 +348,7 @@ const AdminHomepage = () => {
                     Supprimer
                   </button>
                 </div>
-
-              <div className="details-body">
+              </div>
                 <div className="detail-section">
                   <h3>Informations générales</h3>
                   <div className="detail-item">
