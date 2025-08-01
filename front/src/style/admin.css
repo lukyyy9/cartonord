@@ -179,7 +179,6 @@
   color: #333;
   font-size: 1rem;
   font-weight: 500;
-  flex: 1;
   margin-right: 0.5rem;
 }
 
@@ -238,7 +237,6 @@
 .details-header h2 {
   margin: 0;
   color: #333;
-  flex: 1;
 }
 
 .map-actions {

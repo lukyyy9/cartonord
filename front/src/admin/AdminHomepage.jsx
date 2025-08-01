@@ -173,15 +173,9 @@ const AdminHomepage = () => {
                       {map.layers?.length || 0} couche(s)
                     </div>
                     <div className="map-date">
-                      Créée le {formatDate(map.created_at)}
+                      MàJ le {formatDate(map.updatedAt)}
                     </div>
                   </div>
-
-                  {map.description && (
-                    <div className="map-description">
-                      {map.description}
-                    </div>
-                  )}
                 </div>
               ))
             )}
@@ -198,7 +192,7 @@ const AdminHomepage = () => {
                     className="edit-btn"
                     onClick={() => handleEditMap(selectedMap.id)}
                   >
-                    Éditer la carte
+                    Lancer l'éditeur
                   </button>
                   <button
                     className="delete-btn"
@@ -223,11 +217,11 @@ const AdminHomepage = () => {
                   </div>
                   <div className="detail-item">
                     <label>Créée le :</label>
-                    <span>{formatDate(selectedMap.created_at)}</span>
+                    <span>{formatDate(selectedMap.createdAt)}</span>
                   </div>
                   <div className="detail-item">
                     <label>Modifiée le :</label>
-                    <span>{formatDate(selectedMap.updated_at)}</span>
+                    <span>{formatDate(selectedMap.updatedAt)}</span>
                   </div>
                   {selectedMap.description && (
                     <div className="detail-item">
