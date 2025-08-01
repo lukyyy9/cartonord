@@ -90,22 +90,9 @@ const AdminHomepage = () => {
     setEditFormData({
       name: map.name || '',
       description: map.description || '',
-      slug: map.slug || generateSlug(map.name || '')
+      slug: map.slug || ''
     });
     setShowEditModal(true);
-  };
-
-  const generateSlug = (name) => {
-    return name.toLowerCase()
-      .replace(/[^\w\s-]/g, '') // Supprimer les caractères spéciaux
-      .replace(/\s+/g, '-') // Remplacer les espaces par des tirets
-      .replace(/-+/g, '-') // Éviter les tirets multiples
-      .trim();
-  };
-
-  const handleSlugChange = (value) => {
-    const slug = generateSlug(value);
-    setEditFormData(prev => ({ ...prev, slug }));
   };
 
   const handleSaveMapInfo = async () => {
@@ -428,7 +415,6 @@ const AdminHomepage = () => {
                   value={editFormData.name}
                   onChange={(e) => {
                     setEditFormData(prev => ({ ...prev, name: e.target.value }));
-                    handleSlugChange(e.target.value);
                   }}
                   placeholder="Nom de votre carte"
                   required
@@ -452,12 +438,12 @@ const AdminHomepage = () => {
                   type="text"
                   id="map-slug"
                   value={editFormData.slug}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={(e) => {
+                    const slugValue = e.target.value.replace(/\s+/g, '-');
+                    setEditFormData(prev => ({ ...prev, slug: slugValue }));
+                  }}
                   placeholder="slug-de-votre-carte"
                 />
-                <small className="help-text">
-                  Le slug est utilisé dans l'URL de votre carte. Il est généré automatiquement à partir du nom.
-                </small>
               </div>
             </div>
             
