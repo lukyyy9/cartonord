@@ -6,6 +6,7 @@ const healthRoutes = require('./routes/health');
 const mapRoutes = require('./routes/maps');
 const pictogramsRoutes = require('./routes/pictograms');
 const authRoutes = require('./routes/auth');
+const publicRoutes = require('./routes/public');
 const authMiddleware = require('./middlewares/auth');
 const { sequelize, Admin } = require('./models');
 
@@ -20,6 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 // Routes publiques
 app.use('/health', healthRoutes);
 app.use('/auth', authRoutes);
+// Route publique pour accéder aux cartes publiées par slug
+app.use('/', publicRoutes);
 
 // Routes protégées
 app.use('/api/maps', authMiddleware, mapRoutes);

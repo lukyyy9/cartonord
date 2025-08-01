@@ -42,6 +42,7 @@ module.exports = (sequelize) => {
         'draft',         // Brouillon
         'processing',    // En cours de traitement
         'ready',         // Prêt avec tileset
+        'published',     // Publié avec slug accessible
         'tileset_error', // Erreur lors de la génération du tileset
         'error'          // Erreur générale
       ),

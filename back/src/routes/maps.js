@@ -119,4 +119,62 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/maps/:id/publish - Publier une carte avec un slug
+router.post('/:id/publish', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { slug } = req.body;
+    
+    if (!slug) {
+      return res.status(400).json({ error: 'Le slug est requis pour publier la carte' });
+    }
+    
+    const publishedMap = await MapsService.publishMap(id, slug);
+    res.json(publishedMap);
+  } catch (error) {
+    console.error('Erreur lors de la publication de la carte:', error);
+    
+    if (error.message === 'Carte non trouvée') {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message === 'La carte doit être dans l\'état ready pour être publiée') {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (error.message === 'Ce slug est déjà utilisé par une autre carte publiée') {
+      return res.status(409).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erreur lors de la publication de la carte',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/maps/:id/unpublish - Dépublier une carte
+router.post('/:id/unpublish', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const unpublishedMap = await MapsService.unpublishMap(id);
+    res.json(unpublishedMap);
+  } catch (error) {
+    console.error('Erreur lors de la dépublication de la carte:', error);
+    
+    if (error.message === 'Carte non trouvée') {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message === 'La carte n\'est pas publiée') {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erreur lors de la dépublication de la carte',
+      message: error.message 
+    });
+  }
+});
+
 module.exports = router;

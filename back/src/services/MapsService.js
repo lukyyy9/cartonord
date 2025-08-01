@@ -332,6 +332,85 @@ class MapsService {
       });
     }
   }
+
+  /**
+   * Publier une carte avec un slug
+   */
+  async publishMap(mapId, slug) {
+    const map = await Map.findByPk(mapId);
+    
+    if (!map) {
+      throw new Error('Carte non trouvée');
+    }
+    
+    if (map.status !== 'ready') {
+      throw new Error('La carte doit être dans l\'état ready pour être publiée');
+    }
+    
+    // Vérifier que le slug n'est pas déjà utilisé par une autre carte publiée
+    const existingMap = await Map.findOne({
+      where: {
+        slug: slug,
+        status: 'published',
+        id: { [require('sequelize').Op.ne]: mapId } // Exclure la carte actuelle
+      }
+    });
+    
+    if (existingMap) {
+      throw new Error('Ce slug est déjà utilisé par une autre carte publiée');
+    }
+    
+    // Mettre à jour la carte
+    await map.update({
+      status: 'published',
+      slug: slug
+    });
+    
+    return map;
+  }
+
+  /**
+   * Dépublier une carte
+   */
+  async unpublishMap(mapId) {
+    const map = await Map.findByPk(mapId);
+    
+    if (!map) {
+      throw new Error('Carte non trouvée');
+    }
+    
+    if (map.status !== 'published') {
+      throw new Error('La carte n\'est pas publiée');
+    }
+    
+    // Remettre la carte à l'état ready et garder le slug pour faciliter la republication
+    await map.update({
+      status: 'ready'
+    });
+    
+    return map;
+  }
+
+  /**
+   * Récupérer une carte publiée par son slug
+   * Retourne uniquement l'ID et les métadonnées nécessaires pour l'affichage public
+   */
+  async getMapBySlug(slug) {
+    const map = await Map.findOne({
+      where: {
+        slug: slug,
+        status: 'published'
+      },
+      attributes: ['id', 'name', 'description', 'slug', 'config', 'tilesetId', 'status', 'created_at', 'updated_at']
+    });
+
+    if (!map) {
+      return null;
+    }
+
+    // Retourner uniquement les métadonnées essentielles
+    return map.toJSON();
+  }
 }
 
 module.exports = new MapsService();
