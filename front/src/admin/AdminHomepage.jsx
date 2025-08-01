@@ -194,9 +194,10 @@ const AdminHomepage = () => {
     const statusColors = {
       draft: '#ffa500',
       processing: '#2196f3',
-      ready: '#4caf50',
+      ready: '#757575',
       tileset_error: '#f44336',
-      error: '#f44336'
+      error: '#f44336',
+      published: '#4caf50'
     };
     return statusColors[status] || '#757575';
   };
@@ -207,7 +208,8 @@ const AdminHomepage = () => {
       processing: 'En cours',
       ready: 'Prêt',
       tileset_error: 'Erreur tileset',
-      error: 'Erreur'
+      error: 'Erreur',
+      published: 'Publié'
     };
     return statusLabels[status] || status;
   };

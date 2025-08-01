@@ -34,7 +34,7 @@ function AdminHeader({ mapName = null }) {
               </button>
               {mapName && (
                 <span className="current-map">
-                  / Édition de: {mapName}
+                  Édition de: {mapName}
                 </span>
               )}
             </div>

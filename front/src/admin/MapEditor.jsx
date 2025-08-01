@@ -770,7 +770,7 @@ function MapEditor() {
 
   return (
     <div className="admin-layout">
-      <AdminHeader />
+      <AdminHeader mapName={currentMap?.name} />
       
       {/* Indicateur de chargement */}
       {isLoading && (

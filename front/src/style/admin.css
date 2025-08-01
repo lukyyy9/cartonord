@@ -20,7 +20,7 @@
 .admin-header-left {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 30px;
 }
 
 .admin-header h1 {
@@ -247,7 +247,7 @@
 }
 
 .edit-btn {
-  background-color: #4caf50;
+  background-color: #ebc000;
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -260,7 +260,7 @@
 }
 
 .edit-btn:hover {
-  background-color: #45a049;
+  background-color: #bb9f00;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -279,7 +279,7 @@
 }
 
 .delete-btn:hover {
-  background-color: #d32f2f;
+  background-color: #c20000;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -326,7 +326,7 @@
 .status-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
-  color: white;
+  color: white!important;
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -510,8 +510,7 @@
 }
 
 .unpublish-btn {
-  background: #ffc107;
-  color: #212529;
+  background: #757575;
   border: none;
   padding: 0.75rem 1.25rem;
   border-radius: 6px;
@@ -523,7 +522,7 @@
 }
 
 .unpublish-btn:hover {
-  background: #e0a800;
+  background: #535353;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
