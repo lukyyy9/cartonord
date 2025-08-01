@@ -34,7 +34,6 @@ function MapEditor() {
   const [currentMap, setCurrentMap] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
-
   // Ajoutez un compteur pour garantir l'unicité
   let idCounter = 0;
   
@@ -656,7 +655,14 @@ function MapEditor() {
   
       console.log('Données à sauvegarder:', payload);
   
-      const response = await apiService.put('/api/maps/ad386d03-509f-457d-b764-bfd63e7a503b', payload);
+      // Utiliser l'ID de la carte actuelle (soit depuis l'URL, soit depuis la carte chargée)
+      const currentMapId = mapId || currentMap?.id;
+      
+      if (!currentMapId) {
+        throw new Error('Aucun ID de carte disponible pour la sauvegarde');
+      }
+  
+      const response = await apiService.put(`/api/maps/${currentMapId}`, payload);
   
       if (!response.ok) {
         const errorData = await response.json();
