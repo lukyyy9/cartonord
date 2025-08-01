@@ -135,11 +135,22 @@ class MapsService {
         throw new Error('Carte non trouvée');
       }
 
+      // Préserver le statut published si la carte était déjà publiée
+      const wasPublished = map.status === 'published';
+      
       // Mettre à jour les données de base de la carte
-      await map.update({
-        ...(config && { config }),
-        ...(status && { status })
-      }, { transaction });
+      const updateData = {};
+      if (config) updateData.config = config;
+      
+      // Si la carte était publiée, maintenir le statut published
+      // Sinon, utiliser le statut fourni ou garder l'actuel
+      if (wasPublished) {
+        updateData.status = 'published';
+      } else if (status) {
+        updateData.status = status;
+      }
+      
+      await map.update(updateData, { transaction });
 
       // Supprimer les anciennes couches et POIs
       await Layer.destroy({ 
@@ -302,12 +313,16 @@ class MapsService {
           const tilerResult = await tilerResponse.json();
           console.log('Tileset généré avec succès:', tilerResult);
           
+          // Préserver le statut published si la carte était déjà publiée
+          const currentMap = await Map.findByPk(map.id);
+          const statusToUse = currentMap?.status === 'published' ? 'published' : 'ready';
+          
           // Mettre à jour la carte avec les infos du tileset
           await map.update({
             tilesetPath: tilerResult.path,
             tilesetId: tilerResult.tilesetId,
             tilesetMetadata: tilerResult.stats || {},
-            status: 'ready'
+            status: statusToUse
           });
         } else {
           const errorText = await tilerResponse.text();
@@ -324,10 +339,14 @@ class MapsService {
     } catch (tilerError) {
       console.error('Erreur lors de l\'appel au service tiler:', tilerError);
       
+      // Préserver le statut published même en cas d'erreur du tileset
+      const currentMap = await Map.findByPk(map.id);
+      const statusToUse = currentMap?.status === 'published' ? 'published' : 'tileset_error';
+      
       // Ne pas faire échouer la sauvegarde si le tileset échoue
-      // Mais marquer la carte avec un statut d'erreur
+      // Mais marquer la carte avec un statut d'erreur (sauf si elle est publiée)
       await map.update({ 
-        status: 'tileset_error',
+        status: statusToUse,
         tilesetMetadata: { error: tilerError.message }
       });
     }
