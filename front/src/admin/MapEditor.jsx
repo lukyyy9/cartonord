@@ -640,8 +640,6 @@ function MapEditor() {
       }));
   
       const payload = {
-        name: "Ma carte",
-        description: "Carte créée avec l'éditeur",
         config: {
           center: map.current.getCenter().toArray(),
           zoom: map.current.getZoom(),

@@ -95,8 +95,6 @@ class MapsService {
     
     try {
       const { 
-        name, 
-        description, 
         config, 
         status,
         layers = [],
@@ -111,8 +109,6 @@ class MapsService {
 
       // Mettre à jour les données de base de la carte
       await map.update({
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
         ...(config && { config }),
         ...(status && { status })
       }, { transaction });
