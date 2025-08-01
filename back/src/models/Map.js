@@ -18,6 +18,13 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        len: [0, 255]
+      }
+    },
     // Configuration globale de la carte
     config: {
       type: DataTypes.JSONB,

@@ -88,6 +88,34 @@ class MapsService {
   }
 
   /**
+   * Met à jour les métadonnées d'une carte (nom, description, slug)
+   */
+  async updateMapMetadata(id, data) {
+    const { name, description, slug } = data;
+
+    const map = await Map.findByPk(id);
+    if (!map) {
+      throw new Error('Carte non trouvée');
+    }
+
+    // Valider que le nom est fourni s'il est inclus
+    if (name !== undefined && (!name || name.trim().length === 0)) {
+      throw new Error('Le nom ne peut pas être vide');
+    }
+
+    // Préparer les données à mettre à jour
+    const updateData = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (description !== undefined) updateData.description = description;
+    if (slug !== undefined) updateData.slug = slug ? slug.trim() : null;
+
+    // Mettre à jour la carte
+    await map.update(updateData);
+
+    return map;
+  }
+
+  /**
    * Met à jour une carte avec couches et POIs
    */
   async updateMap(id, data) {

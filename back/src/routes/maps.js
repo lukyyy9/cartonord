@@ -75,6 +75,30 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/maps/:id/metadata - Mettre à jour les métadonnées d'une carte (nom, description, slug)
+router.patch('/:id/metadata', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedMap = await MapsService.updateMapMetadata(id, req.body);
+    res.json(updatedMap);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des métadonnées de la carte:', error);
+    
+    if (error.message === 'Carte non trouvée') {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message === 'Le nom ne peut pas être vide') {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erreur lors de la mise à jour des métadonnées de la carte',
+      message: error.message 
+    });
+  }
+});
+
 // DELETE /api/maps/:id - Supprimer une carte
 router.delete('/:id', async (req, res) => {
   try {
