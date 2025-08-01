@@ -268,7 +268,7 @@ const AdminHomepage = () => {
                       {selectedMap.layers.map((layer, index) => (
                         <div key={layer.id || index} className="layer-summary">
                           <div className="layer-summary-header">
-                            <span className="layer-name">{layer.name || layer.fileName || `Couche ${index + 1}`}</span>
+                            <span className="layer-summary-name">{layer.name || layer.fileName || `Couche ${index + 1}`}</span>
                             <span className="layer-type">{layer.layerType || 'mixed'}</span>
                           </div>
                           <div className="layer-summary-details">
