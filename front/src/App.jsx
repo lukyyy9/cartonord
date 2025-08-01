@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Login from './admin/Login';
 import AdminHomepage from './admin/AdminHomepage';
 import MapEditor from './admin/MapEditor';
-import RoquefortLesPins from './user/RoquefortLesPins';
+import RoquefortLesPins from './user/MapViewer';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
