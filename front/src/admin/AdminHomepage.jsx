@@ -225,11 +225,11 @@ const AdminHomepage = () => {
                   </div>
                   
                   <div className="map-info">
-                    <div className="map-layers">
-                      {map.layers?.length || 0} couche(s)
-                    </div>
-                    <div className="map-date">
+                    <div>
                       MàJ le {formatDate(map.updatedAt)}
+                    </div>
+                    <div>
+                      /{map.slug || ''}
                     </div>
                   </div>
                 </div>
