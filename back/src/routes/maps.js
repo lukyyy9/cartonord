@@ -119,17 +119,12 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// POST /api/maps/:id/publish - Publier une carte avec un slug
+// POST /api/maps/:id/publish - Publier une carte
 router.post('/:id/publish', async (req, res) => {
   try {
     const { id } = req.params;
-    const { slug } = req.body;
     
-    if (!slug) {
-      return res.status(400).json({ error: 'Le slug est requis pour publier la carte' });
-    }
-    
-    const publishedMap = await MapsService.publishMap(id, slug);
+    const publishedMap = await MapsService.publishMap(id);
     res.json(publishedMap);
   } catch (error) {
     console.error('Erreur lors de la publication de la carte:', error);
@@ -139,6 +134,10 @@ router.post('/:id/publish', async (req, res) => {
     }
     
     if (error.message === 'La carte doit être dans l\'état ready pour être publiée') {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (error.message === 'La carte doit avoir un slug pour être publiée') {
       return res.status(400).json({ error: error.message });
     }
     

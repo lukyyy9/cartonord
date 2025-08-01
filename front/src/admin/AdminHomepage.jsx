@@ -136,6 +136,60 @@ const AdminHomepage = () => {
     setEditFormData({ name: '', description: '', slug: '' });
   };
 
+  const handlePublishMap = async (mapId) => {
+    try {
+      const response = await apiService.post(`/api/maps/${mapId}/publish`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la publication');
+      }
+      
+      const publishedMap = await response.json();
+      
+      // Mettre à jour la liste des cartes
+      setMaps(maps.map(map => 
+        map.id === mapId ? publishedMap : map
+      ));
+      
+      // Mettre à jour la carte sélectionnée si c'est celle-ci
+      if (selectedMap && selectedMap.id === mapId) {
+        setSelectedMap(publishedMap);
+      }
+      
+      alert('Carte publiée avec succès !');
+    } catch (err) {
+      alert('Erreur lors de la publication : ' + err.message);
+    }
+  };
+
+  const handleUnpublishMap = async (mapId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir dépublier cette carte ? Elle ne sera plus accessible publiquement.')) {
+      try {
+        const response = await apiService.post(`/api/maps/${mapId}/unpublish`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erreur lors de la dépublication');
+        }
+        
+        const unpublishedMap = await response.json();
+        
+        // Mettre à jour la liste des cartes
+        setMaps(maps.map(map => 
+          map.id === mapId ? unpublishedMap : map
+        ));
+        
+        // Mettre à jour la carte sélectionnée si c'est celle-ci
+        if (selectedMap && selectedMap.id === mapId) {
+          setSelectedMap(unpublishedMap);
+        }
+        
+        alert('Carte dépubliée avec succès !');
+      } catch (err) {
+        alert('Erreur lors de la dépublication : ' + err.message);
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusColors = {
       draft: '#ffa500',
@@ -257,6 +311,21 @@ const AdminHomepage = () => {
                   >
                     Lancer l'éditeur
                   </button>
+                  {selectedMap.status === 'published' ? (
+                    <button
+                      className="unpublish-btn"
+                      onClick={() => handleUnpublishMap(selectedMap.id)}
+                    >
+                      Dépublier
+                    </button>
+                  ) : selectedMap.status === 'ready' ? (
+                    <button
+                      className="publish-btn"
+                      onClick={() => handlePublishMap(selectedMap.id)}
+                    >
+                      Publier
+                    </button>
+                  ) : null}
                   <button
                     className="delete-btn"
                     onClick={() => handleDeleteMap(selectedMap.id)}

@@ -477,6 +477,38 @@
   background: #138496;
 }
 
+/* Boutons de publication */
+.publish-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.publish-btn:hover {
+  background: #218838;
+}
+
+.unpublish-btn {
+  background: #ffc107;
+  color: #212529;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.unpublish-btn:hover {
+  background: #e0a800;
+}
+
 /* Modal d'édition des métadonnées */
 .edit-modal-overlay {
   position: fixed;

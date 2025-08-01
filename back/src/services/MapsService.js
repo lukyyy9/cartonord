@@ -334,9 +334,9 @@ class MapsService {
   }
 
   /**
-   * Publier une carte avec un slug
+   * Publier une carte (utilise le slug déjà présent en base)
    */
-  async publishMap(mapId, slug) {
+  async publishMap(mapId) {
     const map = await Map.findByPk(mapId);
     
     if (!map) {
@@ -347,10 +347,14 @@ class MapsService {
       throw new Error('La carte doit être dans l\'état ready pour être publiée');
     }
     
+    if (!map.slug) {
+      throw new Error('La carte doit avoir un slug pour être publiée');
+    }
+    
     // Vérifier que le slug n'est pas déjà utilisé par une autre carte publiée
     const existingMap = await Map.findOne({
       where: {
-        slug: slug,
+        slug: map.slug,
         status: 'published',
         id: { [require('sequelize').Op.ne]: mapId } // Exclure la carte actuelle
       }
@@ -362,8 +366,7 @@ class MapsService {
     
     // Mettre à jour la carte
     await map.update({
-      status: 'published',
-      slug: slug
+      status: 'published'
     });
     
     return map;
