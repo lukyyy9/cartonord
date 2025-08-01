@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { useParams } from 'react-router-dom'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
@@ -12,6 +13,7 @@ import { apiService } from '../services/api';
 import AdminHeader from '../components/AdminHeader';
 
 function MapEditor() {
+  const { mapId } = useParams();
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [loadedLayers, setLoadedLayers] = useState([]);
@@ -29,6 +31,8 @@ function MapEditor() {
   const [availablePictograms, setAvailablePictograms] = useState([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editedPOIData, setEditedPOIData] = useState(null);
+  const [currentMap, setCurrentMap] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   
 
   // Ajoutez un compteur pour garantir l'unicité
@@ -41,12 +45,157 @@ function MapEditor() {
     return `${baseName}-${cleanFileName}-${timestamp}-${idCounter++}`;
   };
 
+  // Fonction pour charger une carte existante
+  const loadExistingMap = async (id) => {
+    try {
+      setIsLoading(true);
+      console.log(`Chargement de la carte avec l'ID: ${id}`);
+      
+      const response = await apiService.get(`/api/maps/${id}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      
+      const mapData = await response.json();
+      
+      console.log('Données de la carte chargées:', mapData);
+      setCurrentMap(mapData);
+
+      // Charger les couches dans l'éditeur
+      if (mapData.layers && mapData.layers.length > 0) {
+        const layersToLoad = [];
+        
+        for (const layer of mapData.layers) {
+          if (layer.geojsonData && map.current) {
+            // Utiliser les IDs de la DB ou générer de nouveaux
+            const sourceId = layer.sourceId || `source-${layer.id}`;
+            const polygonLayerId = layer.layerIds?.[0] || `polygon-${layer.id}`;
+            const lineLayerId = layer.layerIds?.[1] || `line-${layer.id}`;
+            const pointLayerId = layer.layerIds?.[2] || `point-${layer.id}`;
+            
+            // Ajouter la source GeoJSON à la carte
+            map.current.addSource(sourceId, {
+              type: 'geojson',
+              data: layer.geojsonData
+            });
+            
+            // Ajouter les couches pour visualiser les données
+            map.current.addLayer({
+              id: polygonLayerId,
+              type: 'fill',
+              source: sourceId,
+              paint: {
+                'fill-color': layer.color || defaultColor,
+                'fill-opacity': layer.opacity || defaultOpacity,
+                'fill-outline-color': layer.color || defaultColor
+              },
+              filter: ['==', '$type', 'Polygon']
+            });
+
+            map.current.addLayer({
+              id: lineLayerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': layer.color || defaultColor,
+                'line-width': 2,
+                'line-opacity': layer.opacity || defaultOpacity
+              },
+              filter: ['==', '$type', 'LineString']
+            });
+
+            map.current.addLayer({
+              id: pointLayerId,
+              type: 'circle',
+              source: sourceId,
+              paint: {
+                'circle-radius': 5,
+                'circle-color': layer.color || defaultColor,
+                'circle-opacity': layer.opacity || defaultOpacity
+              },
+              filter: ['==', '$type', 'Point']
+            });
+            
+            // Créer l'objet couche pour l'état local
+            const layerObject = {
+              fileName: layer.fileName || layer.name,
+              sourceId,
+              layerIds: [polygonLayerId, lineLayerId, pointLayerId],
+              color: layer.color || defaultColor,
+              opacity: layer.opacity || defaultOpacity,
+              geojsonData: layer.geojsonData,
+              id: layer.id
+            };
+            
+            layersToLoad.push(layerObject);
+          }
+        }
+        
+        setLoadedLayers(layersToLoad);
+      }
+
+      // Charger les points d'intérêt
+      if (mapData.pointsOfInterest && mapData.pointsOfInterest.length > 0) {
+        const poisWithMarkers = mapData.pointsOfInterest.map(poi => {
+          // Créer un marker si le POI a un pictogramme
+          let marker = null;
+          if (poi.pictogramFile && map.current) {
+            const el = document.createElement('div');
+            el.className = 'marker';
+            
+            const img = document.createElement('img');
+            img.src = `/pictogrammes/${poi.pictogramFile}`;
+            img.alt = poi.name;
+            img.width = 32;
+            img.height = 32;
+            el.appendChild(img);
+            
+            marker = new maplibregl.Marker({
+              element: el
+            })
+            .setLngLat(poi.coordinates)
+            .addTo(map.current);
+          }
+          
+          return {
+            ...poi,
+            marker
+          };
+        });
+        
+        setPointsOfInterest(poisWithMarkers);
+      }
+
+      // Ajuster la vue de la carte selon la configuration
+      if (mapData.config && mapData.config.center && map.current) {
+        map.current.setCenter(mapData.config.center);
+        if (mapData.config.zoom) {
+          map.current.setZoom(mapData.config.zoom);
+        }
+      }
+
+    } catch (error) {
+      console.error('Erreur lors du chargement de la carte:', error);
+      alert('Erreur lors du chargement de la carte: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Effet pour l'ordre des couches à l'upload
   useEffect(() => {
     if (map.current && loadedLayers.length > 0) {
       reorderMapLayers(loadedLayers);
     }
   }, [loadedLayers]);
+
+  // Effet pour charger une carte existante si un mapId est fourni
+  useEffect(() => {
+    if (mapId && map.current && !currentMap) {
+      loadExistingMap(mapId);
+    }
+  }, [mapId, currentMap]);
 
   // Fonction pour gérer l'édition d'un point d'intérêt
   const handleEditPOI = (point) => {
@@ -376,7 +525,7 @@ function MapEditor() {
   };
 
   // Fonction pour réorganiser les couches sur la carte
-  const reorderMapLayers = (newOrderedLayers) => {
+  const reorderMapLayers = useCallback((newOrderedLayers) => {
     if (!map.current) return;
 
     // Les couches les plus hautes dans la liste doivent être affichées au-dessus
@@ -390,7 +539,7 @@ function MapEditor() {
         }
       });
     }
-  };
+  }, []);
 
   // Initialiser le drag-and-drop pour chaque élément
   const initDragElement = (element, layer, index) => {
@@ -407,7 +556,7 @@ function MapEditor() {
   };
 
   // Fonction pour réordonner les couches
-  const handleReorder = (startIndex, finishIndex) => {
+  const handleReorder = useCallback((startIndex, finishIndex) => {
     if (startIndex === finishIndex) return;
 
     const newLayers = reorder({
@@ -418,7 +567,7 @@ function MapEditor() {
 
     setLoadedLayers(newLayers);
     reorderMapLayers(newLayers);
-  };
+  }, [loadedLayers, reorderMapLayers]);
 
   // Fonction modifiée pour gérer les changements d'opacité
   const handleOpacityInputChange = (layer, value) => {
@@ -618,6 +767,16 @@ function MapEditor() {
   return (
     <div className="admin-layout">
       <AdminHeader />
+      
+      {/* Indicateur de chargement */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-message">
+            Chargement de la carte...
+          </div>
+        </div>
+      )}
+      
       <div className="app">
         {/* Panneau latéral avec onglets */}
         <div className="layer-list">
