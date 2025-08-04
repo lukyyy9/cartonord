@@ -86,7 +86,6 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
 }
 
 .admin-content {
@@ -96,16 +95,15 @@
 }
 
 .maps-sidebar {
-  width: 400px;
-  background-color: #fff;
-  border-right: 1px solid #e0e0e0;
+  width: 420px;
+  background: rgba(36, 36, 36);
   display: flex;
   flex-direction: column;
+  border-top: 1px solid #4d4d4d;
 }
 
 .sidebar-header {
   padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -113,7 +111,6 @@
 
 .sidebar-header h2 {
   margin: 0;
-  color: #333;
   font-size: 1.1rem;
   font-weight: 500;
 }
@@ -147,8 +144,7 @@
 }
 
 .map-item {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #4d4d4d;
   border-radius: 8px;
   margin-bottom: 0.5rem;
   padding: 1rem;
@@ -163,7 +159,7 @@
 
 .map-item.selected {
   border-color: #2196f3;
-  background-color: #f3f9ff;
+  background-color: #2f2f2f;
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
 }
 
@@ -176,7 +172,6 @@
 
 .map-name {
   margin: 0;
-  color: #333;
   font-size: 1rem;
   font-weight: 500;
   margin-right: 0.5rem;
@@ -197,7 +192,7 @@
   justify-content: space-between;
   margin-bottom: 0.5rem;
   font-size: 0.85rem;
-  color: #666;
+  color: #9c9c9c;
 }
 
 .map-layers {
@@ -217,7 +212,7 @@
 
 .map-details {
   flex: 1;
-  background-color: #fff;
+  background-color: #2f2f2f;
   overflow-y: auto;
 }
 
@@ -236,7 +231,6 @@
 
 .details-header h2 {
   margin: 0;
-  color: #333;
 }
 
 .map-actions {
@@ -291,17 +285,15 @@
 }
 
 .detail-section {
-  background-color: #f9f9f9;
   border-radius: 8px;
   padding: 1rem;
 }
 
 .detail-section h3 {
   margin: 0 0 1rem 0;
-  color: #333;
   font-size: 1rem;
   font-weight: 600;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #4d4d4d;
   padding-bottom: 0.5rem;
 }
 
@@ -313,13 +305,12 @@
 
 .detail-item label {
   font-weight: 600;
-  color: #555;
   min-width: 120px;
   margin-right: 0.5rem;
 }
 
 .detail-item span {
-  color: #333;
+  color: #9c9c9c;
   flex: 1;
 }
 
@@ -346,8 +337,8 @@
 }
 
 .layer-summary {
-  background-color: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #4d4d4d;
+  background-color: #353535;
   border-radius: 4px;
   padding: 0.5rem;
 }
@@ -360,14 +351,12 @@
 }
 
 .layer-summary-name {
-    color: #111;
     font-weight: 500;
     margin: 0;
 }
 
 .layer-type {
-  background-color: #e0e0e0;
-  color: #666;
+  color: #9c9c9c;
   padding: 0.1rem 0.4rem;
   border-radius: 3px;
   font-size: 0.75rem;
@@ -378,7 +367,7 @@
   display: flex;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #666;
+  color: #9c9c9c;
 }
 
 .poi-summary {
@@ -416,7 +405,6 @@
 
 .tileset-path {
   font-family: monospace;
-  background-color: #f0f0f0;
   padding: 0.2rem 0.4rem;
   border-radius: 3px;
   font-size: 0.8rem;

@@ -17,7 +17,7 @@ function MapEditor() {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [loadedLayers, setLoadedLayers] = useState([]);
-  const defaultColor = '#111111';
+  const defaultColor = '#fff';
   const defaultOpacity = 0.8;
   const layerRefs = useRef(new Map());
   const [instanceId] = useState(() => Symbol('map-layers-instance'));
