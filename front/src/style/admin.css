@@ -210,7 +210,7 @@
   line-height: 1.4;
 }
 
-.map-details {
+.main-content {
   flex: 1;
   background-color: #2f2f2f;
   overflow-y: auto;
@@ -441,12 +441,12 @@
     flex-direction: column;
   }
   
-  .maps-sidebar {
+  .admin-sidebar {
     width: 100%;
     height: 50vh;
   }
   
-  .map-details {
+  .main-content {
     height: 50vh;
   }
   
