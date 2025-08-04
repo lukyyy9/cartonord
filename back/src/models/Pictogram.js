@@ -14,8 +14,7 @@ module.exports = (sequelize) => {
     },
     category: {
       type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'general'
+      allowNull: true,
     },
     // Chemin vers le fichier SVG ou PNG
     filePath: {

@@ -83,7 +83,7 @@ class PictogramsService {
 
       const pictogram = await Pictogram.create({
         name,
-        category: category || 'general',
+        category: category || null,
         filePath,
         publicUrl,
         libraryId,
@@ -95,6 +95,76 @@ class PictogramsService {
       return await this.getPictogramById(pictogram.id);
     } catch (error) {
       throw new Error(`Erreur lors de la création du pictogramme: ${error.message}`);
+    }
+  }
+
+  /**
+   * Crée plusieurs pictogrammes en une seule opération
+   */
+  async createMultiplePictograms(pictogramsData) {
+    try {
+      if (!Array.isArray(pictogramsData) || pictogramsData.length === 0) {
+        throw new Error('Un tableau de pictogrammes est requis');
+      }
+
+      const results = [];
+      const errors = [];
+
+      // Traiter chaque pictogramme individuellement
+      for (let i = 0; i < pictogramsData.length; i++) {
+        try {
+          const pictogramData = pictogramsData[i];
+          
+          // Validation des champs obligatoires pour chaque pictogramme
+          if (!pictogramData.name || !pictogramData.filePath || !pictogramData.publicUrl || !pictogramData.libraryId) {
+            throw new Error(`Pictogramme ${i + 1}: Le nom, le chemin du fichier, l'URL publique et l'ID de la librairie sont requis`);
+          }
+
+          // Vérifier que la librairie existe
+          const library = await Library.findByPk(pictogramData.libraryId);
+          if (!library) {
+            throw new Error(`Pictogramme ${i + 1}: La librairie spécifiée n'existe pas`);
+          }
+
+          // Vérifier si un pictogramme avec ce nom existe déjà
+          const existingPictogram = await Pictogram.findOne({ where: { name: pictogramData.name } });
+          if (existingPictogram) {
+            throw new Error(`Pictogramme ${i + 1}: Un pictogramme avec ce nom existe déjà`);
+          }
+
+          const pictogram = await Pictogram.create({
+            name: pictogramData.name,
+            category: pictogramData.category || null,
+            filePath: pictogramData.filePath,
+            publicUrl: pictogramData.publicUrl,
+            libraryId: pictogramData.libraryId,
+            svgData: pictogramData.svgData,
+            metadata: pictogramData.metadata || {}
+          });
+
+          // Récupérer le pictogramme avec ses relations
+          const createdPictogram = await this.getPictogramById(pictogram.id);
+          results.push(createdPictogram);
+
+        } catch (error) {
+          errors.push({
+            index: i,
+            pictogram: pictogramsData[i],
+            error: error.message
+          });
+        }
+      }
+
+      return {
+        success: results,
+        errors: errors,
+        total: pictogramsData.length,
+        created: results.length,
+        failed: errors.length
+      };
+
+    } catch (error) {
+      throw new Error(`Erreur lors de la création des pictogrammes: ${error.message}`);
     }
   }
 

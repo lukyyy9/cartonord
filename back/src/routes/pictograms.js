@@ -63,32 +63,55 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/pictograms - Créer un nouveau pictogramme
+// POST /api/pictograms - Créer un ou plusieurs pictogrammes
 router.post('/', async (req, res) => {
   try {
-    const { name, category, filePath, publicUrl, libraryId, svgData, metadata } = req.body;
+    const data = req.body;
 
-    if (!name || !filePath || !publicUrl || !libraryId) {
-      return res.status(400).json({ 
-        error: 'Le nom, le chemin du fichier, l\'URL publique et l\'ID de la librairie sont requis' 
+    // Vérifier si on reçoit un tableau (création multiple) ou un objet (création simple)
+    if (Array.isArray(data)) {
+      // Création multiple
+      const result = await PictogramsService.createMultiplePictograms(data);
+      
+      if (result.failed > 0) {
+        // Il y a eu des erreurs pour certains pictogrammes
+        return res.status(207).json({
+          message: `${result.created} pictogrammes créés avec succès, ${result.failed} échecs`,
+          result: result
+        });
+      } else {
+        // Tous les pictogrammes ont été créés avec succès
+        return res.status(201).json({
+          message: `${result.created} pictogrammes créés avec succès`,
+          pictograms: result.success
+        });
+      }
+    } else {
+      // Création simple
+      const { name, category, filePath, publicUrl, libraryId, svgData, metadata } = data;
+
+      if (!name || !filePath || !publicUrl || !libraryId) {
+        return res.status(400).json({ 
+          error: 'Le nom, le chemin du fichier, l\'URL publique et l\'ID de la librairie sont requis' 
+        });
+      }
+
+      const pictogram = await PictogramsService.createPictogram({
+        name,
+        category,
+        filePath,
+        publicUrl,
+        libraryId,
+        svgData,
+        metadata
       });
+
+      res.status(201).json(pictogram);
     }
-
-    const pictogram = await PictogramsService.createPictogram({
-      name,
-      category,
-      filePath,
-      publicUrl,
-      libraryId,
-      svgData,
-      metadata
-    });
-
-    res.status(201).json(pictogram);
   } catch (error) {
-    console.error('Erreur lors de la création du pictogramme:', error);
+    console.error('Erreur lors de la création du/des pictogramme(s):', error);
     res.status(500).json({ 
-      error: 'Erreur lors de la création du pictogramme',
+      error: 'Erreur lors de la création du/des pictogramme(s)',
       message: error.message 
     });
   }
