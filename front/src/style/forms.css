@@ -91,19 +91,16 @@
 /* Styles pour le formulaire d'édition des POI */
 .edit-overlay {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 400px;
+  top: 60px;
+  left: 0px;
+  width: 420px;
   height: 95%;
-  padding: 10px;
-  background-color: transparent;
   z-index: 2;
 }
 
 .edit-form {
   background-color: #333;
-  border-radius: 10px;
-  width: 400px;
+  width: 420px;
   height: 100%;
 }
 

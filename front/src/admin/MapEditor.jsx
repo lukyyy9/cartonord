@@ -1013,7 +1013,7 @@ function MapEditor() {
                         alt="Pictogramme" 
                       />
                     ) : (
-                      <div className="no-pictogram">Aucun pictogramme sélectionné</div>
+                      <div className="no-pictogram">Aucun</div>
                     )}
                   </div>
                 </div>
