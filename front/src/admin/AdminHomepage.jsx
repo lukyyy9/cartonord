@@ -15,13 +15,113 @@ const AdminHomepage = () => {
     slug: ''
   });
   const [activeTab, setActiveTab] = useState('maps');
-  const [pictograms, setPictograms] = useState([]);
-  const [selectedPictogram, setSelectedPictogram] = useState(null);
+  const [libraries, setLibraries] = useState([]);
+  const [selectedLibrary, setSelectedLibrary] = useState(null);
+  const [showEditLibraryModal, setShowEditLibraryModal] = useState(false);
+  const [libraryFormData, setLibraryFormData] = useState({
+    name: ''
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchMaps();
   }, []);
+
+  const fetchLibraries = async () => {
+    try {
+      const response = await apiService.get('/api/libraries');
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des bibliothèques');
+      }
+      const librariesData = await response.json();
+      setLibraries(librariesData);
+    } catch (err) {
+      console.error('Erreur lors du chargement des bibliothèques:', err);
+    }
+  };
+
+  const handleCreateLibrary = async () => {
+    const libraryName = prompt('Nom de la nouvelle bibliothèque :');
+    if (libraryName) {
+      try {
+        const response = await apiService.post('/api/libraries', {
+          name: libraryName.trim()
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erreur lors de la création de la bibliothèque');
+        }
+
+        const newLibrary = await response.json();
+        setLibraries([newLibrary, ...libraries]);
+        alert('Bibliothèque créée avec succès !');
+      } catch (err) {
+        alert('Erreur lors de la création : ' + err.message);
+      }
+    }
+  };
+
+  const handleEditLibrary = (library) => {
+    setLibraryFormData({ name: library.name });
+    setShowEditLibraryModal(true);
+  };
+
+  const handleUpdateLibrary = async () => {
+    if (!libraryFormData.name.trim()) {
+      alert('Le nom de la bibliothèque est obligatoire');
+      return;
+    }
+
+    try {
+      const response = await apiService.put(`/api/libraries/${selectedLibrary.id}`, {
+        name: libraryFormData.name.trim()
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour de la bibliothèque');
+      }
+
+      const updatedLibrary = await response.json();
+      setLibraries(libraries.map(lib => 
+        lib.id === selectedLibrary.id ? updatedLibrary : lib
+      ));
+      setSelectedLibrary(updatedLibrary);
+      setShowEditLibraryModal(false);
+      alert('Bibliothèque mise à jour avec succès !');
+    } catch (err) {
+      alert('Erreur lors de la mise à jour : ' + err.message);
+    }
+  };
+
+  const handleDeleteLibrary = async (libraryId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette bibliothèque ? Cette action est irréversible.')) {
+      try {
+        const response = await apiService.delete(`/api/libraries/${libraryId}`);
+        if (!response.ok) {
+          throw new Error('Erreur lors de la suppression');
+        }
+        
+        setLibraries(libraries.filter(lib => lib.id !== libraryId));
+        if (selectedLibrary && selectedLibrary.id === libraryId) {
+          setSelectedLibrary(null);
+        }
+        alert('Bibliothèque supprimée avec succès !');
+      } catch (err) {
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
+    }
+  };
+
+  const handleLibrarySelect = (library) => {
+    setSelectedLibrary(library);
+  };
+
+  const handleCloseEditLibraryModal = () => {
+    setShowEditLibraryModal(false);
+    setLibraryFormData({ name: '' });
+  };
 
   const fetchMaps = async () => {
     try {
@@ -227,31 +327,12 @@ const AdminHomepage = () => {
     });
   };
 
-  const handlePictogramSelect = (pictogram) => {
-    setSelectedPictogram(pictogram);
-  };
-
-  const handleDeletePictogram = async (pictogramId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce pictogramme ? Cette action est irréversible.')) {
-      try {
-        // TODO: Remplacer par un vrai appel API
-        setPictograms(pictograms.filter(pictogram => pictogram.id !== pictogramId));
-        if (selectedPictogram && selectedPictogram.id === pictogramId) {
-          setSelectedPictogram(null);
-        }
-        alert('Pictogramme supprimé avec succès !');
-      } catch (err) {
-        alert('Erreur lors de la suppression : ' + err.message);
-      }
-    }
-  };
-
-  // Charger les pictogrammes quand l'onglet pictogrammes est activé
+  // Charger les bibliothèques quand l'onglet pictogrammes est activé
   useEffect(() => {
-    if (activeTab === 'pictograms' && pictograms.length === 0) {
-      //fetchPictograms();
+    if (activeTab === 'pictograms' && libraries.length === 0) {
+      fetchLibraries();
     }
-  }, [activeTab, pictograms.length]);
+  }, [activeTab, libraries.length]);
 
   if (loading) {
     return (
@@ -356,36 +437,39 @@ const AdminHomepage = () => {
           {/* Contenu de l'onglet Pictogrammes */}
           <div className={`tab-content ${activeTab === 'pictograms' ? 'active' : ''}`}>
             <div className="sidebar-header">
-              <h2>Bibliothèques ({pictograms.length})</h2>
+              <h2>Bibliothèques ({libraries.length})</h2>
               <button 
                 className="create-map-btn"
-                //onClick={handleCreatePictogram}
+                onClick={handleCreateLibrary}
               >
                 + Nouvelle
               </button>
             </div>
 
             <div className="maps-list">
-              {pictograms.length === 0 ? (
+              {libraries.length === 0 ? (
                 <div className="no-maps">
                   Aucune bibliothèque créée.
                   <br />
                   Créez votre première bibliothèque !
                 </div>
               ) : (
-                pictograms.map(pictogram => (
+                libraries.map(library => (
                   <div
-                    key={pictogram.id}
-                    className={`map-item ${selectedPictogram?.id === pictogram.id ? 'selected' : ''}`}
-                    onClick={() => handlePictogramSelect(pictogram)}
+                    key={library.id}
+                    className={`map-item ${selectedLibrary?.id === library.id ? 'selected' : ''}`}
+                    onClick={() => handleLibrarySelect(library)}
                   >
                     <div className="map-item-header">
-                      <h3 className="map-name">{pictogram.name}</h3>
+                      <h3 className="map-name">{library.name}</h3>
                     </div>
                     
                     <div className="map-info">
                       <div>
-                        Nombre de pictogrammes :
+                        Pictogrammes : {library.pictograms?.length || 0}
+                      </div>
+                      <div>
+                        Créée le {new Date(library.createdAt).toLocaleDateString('fr-FR')}
                       </div>
                     </div>
                   </div>
@@ -589,24 +673,24 @@ const AdminHomepage = () => {
             <div className="no-selection">
               <p>Sélectionnez une carte pour voir ses détails</p>
             </div>
-          ) : activeTab === 'pictograms' && selectedPictogram ? (
+          ) : activeTab === 'pictograms' && selectedLibrary ? (
             <div className="details-content">
               <div className="details-header">
-                <h2>{selectedPictogram.name}</h2>
+                <h2>{selectedLibrary.name}</h2>
               </div>
               <div className="details-body">
                 <div className="detail-section">
                   <h3>Actions</h3>
                   <div className="map-actions">
                     <button
-                      className="edit-btn"
-                      onClick={() => alert('Fonctionnalité d\'édition à venir...')}
+                      className="edit-info-btn"
+                      onClick={() => handleEditLibrary(selectedLibrary)}
                     >
-                      Modifier
+                      Modifier informations
                     </button>
                     <button
                       className="delete-btn"
-                      onClick={() => handleDeletePictogram(selectedPictogram.id)}
+                      onClick={() => handleDeleteLibrary(selectedLibrary.id)}
                     >
                       Supprimer
                     </button>
@@ -616,52 +700,75 @@ const AdminHomepage = () => {
                 <div className="detail-section">
                   <h3>Informations générales</h3>
                   <div className="detail-item">
-                    <label>Type :</label>
-                    <span 
-                      className="status-badge"
-                      style={{ backgroundColor: '#4caf50' }}
-                    >
-                      {selectedPictogram.type}
-                    </span>
+                    <label>Nom :</label>
+                    <span>{selectedLibrary.name}</span>
                   </div>
                   <div className="detail-item">
-                    <label>Nom du fichier :</label>
-                    <span>{selectedPictogram.fileName}</span>
+                    <label>Créée le :</label>
+                    <span>{new Date(selectedLibrary.createdAt).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
                   </div>
                   <div className="detail-item">
-                    <label>Chemin complet :</label>
-                    <span>/pictogrammes/{selectedPictogram.fileName}</span>
+                    <label>Modifiée le :</label>
+                    <span>{new Date(selectedLibrary.updatedAt).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
                   </div>
                 </div>
 
                 <div className="detail-section">
-                  <h3>Aperçu</h3>
-                  <div className="pictogram-preview">
-                    <img 
-                      src={`/pictogrammes/${selectedPictogram.fileName}`}
-                      alt={selectedPictogram.name}
-                      style={{ 
-                        maxWidth: '64px', 
-                        maxHeight: '64px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        padding: '8px'
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                    <div style={{ display: 'none', color: '#666', fontStyle: 'italic' }}>
-                      Image non disponible
+                  <h3>Pictogrammes ({selectedLibrary.pictograms?.length || 0})</h3>
+                  {selectedLibrary.pictograms && selectedLibrary.pictograms.length > 0 ? (
+                    <div className="pictograms-grid">
+                      {selectedLibrary.pictograms.map((pictogram) => (
+                        <div key={pictogram.id} className="pictogram-item">
+                          <div className="pictogram-preview">
+                            {pictogram.publicUrl ? (
+                              <img 
+                                src={pictogram.publicUrl}
+                                alt={pictogram.name}
+                                style={{ 
+                                  maxWidth: '32px', 
+                                  maxHeight: '32px',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '4px',
+                                  padding: '4px'
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'block';
+                                }}
+                              />
+                            ) : null}
+                            <div style={{ display: 'none', fontSize: '12px', color: '#666' }}>
+                              N/A
+                            </div>
+                          </div>
+                          <div className="pictogram-info">
+                            <div className="pictogram-name">{pictogram.name}</div>
+                            <div className="pictogram-category">{pictogram.category}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <p className="no-data">Aucun pictogramme dans cette bibliothèque</p>
+                  )}
                 </div>
               </div>
             </div>
-          ) : activeTab === 'pictograms' && !selectedPictogram ? (
+          ) : activeTab === 'pictograms' && !selectedLibrary ? (
             <div className="no-selection">
-              <p>Sélectionnez un pictogramme pour voir ses détails</p>
+              <p>Sélectionnez une bibliothèque pour voir ses détails</p>
             </div>
           ) : activeTab === 'pictograms' ? (
             <div className="pictograms-main-content">
@@ -739,6 +846,48 @@ const AdminHomepage = () => {
                 disabled={!editFormData.name.trim()}
               >
                 Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition de bibliothèque */}
+      {showEditLibraryModal && (
+        <div className="edit-modal-overlay">
+          <div className="edit-modal">
+            <div className="edit-modal-header">
+              <h3>Modifier la bibliothèque</h3>
+              <button className="close-modal-btn" onClick={handleCloseEditLibraryModal}>×</button>
+            </div>
+            
+            <div className="edit-modal-body">
+              <div className="form-group">
+                <label htmlFor="edit-library-name">Nom de la bibliothèque *</label>
+                <input
+                  type="text"
+                  id="edit-library-name"
+                  value={libraryFormData.name}
+                  onChange={(e) => setLibraryFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Nom de votre bibliothèque"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="edit-modal-footer">
+              <button 
+                className="cancel-btn" 
+                onClick={handleCloseEditLibraryModal}
+              >
+                Annuler
+              </button>
+              <button 
+                className="save-btn" 
+                onClick={handleUpdateLibrary}
+                disabled={!libraryFormData.name.trim()}
+              >
+                Modifier
               </button>
             </div>
           </div>
