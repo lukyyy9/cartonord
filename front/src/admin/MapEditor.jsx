@@ -33,6 +33,7 @@ function MapEditor() {
   const [editedPOIData, setEditedPOIData] = useState(null);
   const [currentMap, setCurrentMap] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedPictogram, setSelectedPictogram] = useState(null);
   
   // Ajoutez un compteur pour garantir l'unicité
   let idCounter = 0;
@@ -204,6 +205,11 @@ function MapEditor() {
       name: point.name || point.properties?.name || "Point sans nom",
       description: point.properties?.description || ""
     });
+    // Initialiser le pictogramme sélectionné avec celui actuel
+    setSelectedPictogram(point.pictogram ? {
+      id: point.pictogram,
+      file: point.pictogramFile
+    } : null);
     setShowEditForm(true);
   };
 
@@ -212,6 +218,7 @@ function MapEditor() {
     setShowEditForm(false);
     setCurrentEditingPOI(null);
     setEditedPOIData(null);
+    setSelectedPictogram(null);
   };
 
   // Fonction pour ouvrir le menu des pictogrammes
@@ -223,23 +230,71 @@ function MapEditor() {
   const handleSavePOI = () => {
     if (!currentEditingPOI || !editedPOIData) return;
     
-    // Mettre à jour les données du POI
-    setPointsOfInterest(prevPoints => 
-      prevPoints.map(point => {
-        if (point.id === currentEditingPOI.id) {
-          return {
-            ...point,
-            name: editedPOIData.name,
-            properties: {
-              ...point.properties,
-              name: editedPOIData.name,
-              description: editedPOIData.description
-            }
-          };
-        }
-        return point;
+    // Appliquer le pictogramme sélectionné s'il y en a un
+    if (selectedPictogram) {
+      // Si le point a déjà un marker sur la carte, le supprimer
+      if (currentEditingPOI.marker) {
+        currentEditingPOI.marker.remove();
+      }
+      
+      // Créer un élément DOM pour le marqueur
+      const el = document.createElement('div');
+      el.className = 'marker';
+      
+      // Utilisation d'une image réelle au lieu de background-image
+      const img = document.createElement('img');
+      img.src = `/pictogrammes/${selectedPictogram.file}`;
+      img.alt = selectedPictogram.name || 'Pictogramme';
+      img.width = 32;
+      img.height = 32;
+      el.appendChild(img);
+      
+      // Ajouter le marker à la carte avec l'élément personnalisé
+      const marker = new maplibregl.Marker({
+        element: el
       })
-    );
+      .setLngLat(currentEditingPOI.coordinates)
+      .addTo(map.current);
+      
+      // Mettre à jour les données du POI avec le nouveau pictogramme et marker
+      setPointsOfInterest(prevPoints => 
+        prevPoints.map(point => {
+          if (point.id === currentEditingPOI.id) {
+            return {
+              ...point,
+              name: editedPOIData.name,
+              properties: {
+                ...point.properties,
+                name: editedPOIData.name,
+                description: editedPOIData.description
+              },
+              pictogram: selectedPictogram.id,
+              pictogramFile: selectedPictogram.file,
+              marker: marker
+            };
+          }
+          return point;
+        })
+      );
+    } else {
+      // Mettre à jour seulement les données textuelles sans pictogramme
+      setPointsOfInterest(prevPoints => 
+        prevPoints.map(point => {
+          if (point.id === currentEditingPOI.id) {
+            return {
+              ...point,
+              name: editedPOIData.name,
+              properties: {
+                ...point.properties,
+                name: editedPOIData.name,
+                description: editedPOIData.description
+              }
+            };
+          }
+          return point;
+        })
+      );
+    }
     
     closeEditForm();
   };
@@ -252,51 +307,15 @@ function MapEditor() {
 
   // Fonction pour gérer la sélection d'un pictogramme
   const handlePictogramSelect = (pictogram) => {
-    if (!currentEditingPOI || !map.current) {
+    if (!currentEditingPOI) {
       setShowPictoMenu(false);
       return;
     }
     
-    // Si le point a déjà un marker sur la carte, le supprimer
-    if (currentEditingPOI.marker) {
-      currentEditingPOI.marker.remove();
-    }
-    
-    // Créer un élément DOM pour le marqueur
-    const el = document.createElement('div');
-    el.className = 'marker';
-    
-    // Utilisation d'une image réelle au lieu de background-image
-    const img = document.createElement('img');
-    img.src = `/pictogrammes/${pictogram.file}`;
-    img.alt = pictogram.name;
-    img.width = 32;
-    img.height = 32;
-    el.appendChild(img);
-    
-    // Ajouter le marker à la carte avec l'élément personnalisé
-    const marker = new maplibregl.Marker({
-      element: el
-    })
-    .setLngLat(currentEditingPOI.coordinates)
-    .addTo(map.current);
-    
-    // Stocker une référence au marker
-    const updatedPOI = {
-      ...currentEditingPOI,
-      pictogram: pictogram.id,
-      pictogramFile: pictogram.file,
-      marker: marker
-    };
-    
-    setPointsOfInterest(prevPoints => 
-      prevPoints.map(point => 
-        point.id === currentEditingPOI.id ? updatedPOI : point
-      )
-    );
+    // Seulement sélectionner le pictogramme, ne pas l'appliquer immédiatement
+    setSelectedPictogram(pictogram);
     
     // Fermer le menu des pictogrammes mais garder le formulaire d'édition ouvert
-    setCurrentEditingPOI(updatedPOI);
     setShowPictoMenu(false);
   };
   
@@ -1007,9 +1026,9 @@ function MapEditor() {
                     onClick={openPictogramMenu}
                     title="Cliquez pour changer de pictogramme"
                   >
-                    {currentEditingPOI.pictogramFile ? (
+                    {(selectedPictogram?.file || currentEditingPOI.pictogramFile) ? (
                       <img 
-                        src={`/pictogrammes/${currentEditingPOI.pictogramFile}`} 
+                        src={`/pictogrammes/${selectedPictogram?.file || currentEditingPOI.pictogramFile}`} 
                         alt="Pictogramme" 
                       />
                     ) : (
