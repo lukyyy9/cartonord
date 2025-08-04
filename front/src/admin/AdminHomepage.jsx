@@ -15,6 +15,8 @@ const AdminHomepage = () => {
     slug: ''
   });
   const [activeTab, setActiveTab] = useState('maps');
+  const [pictograms, setPictograms] = useState([]);
+  const [selectedPictogram, setSelectedPictogram] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -225,6 +227,32 @@ const AdminHomepage = () => {
     });
   };
 
+  const handlePictogramSelect = (pictogram) => {
+    setSelectedPictogram(pictogram);
+  };
+
+  const handleDeletePictogram = async (pictogramId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce pictogramme ? Cette action est irréversible.')) {
+      try {
+        // TODO: Remplacer par un vrai appel API
+        setPictograms(pictograms.filter(pictogram => pictogram.id !== pictogramId));
+        if (selectedPictogram && selectedPictogram.id === pictogramId) {
+          setSelectedPictogram(null);
+        }
+        alert('Pictogramme supprimé avec succès !');
+      } catch (err) {
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
+    }
+  };
+
+  // Charger les pictogrammes quand l'onglet pictogrammes est activé
+  useEffect(() => {
+    if (activeTab === 'pictograms' && pictograms.length === 0) {
+      //fetchPictograms();
+    }
+  }, [activeTab, pictograms.length]);
+
   if (loading) {
     return (
       <div className="admin-homepage">
@@ -271,7 +299,7 @@ const AdminHomepage = () => {
                 className="create-map-btn"
                 onClick={handleCreateMap}
               >
-                + Nouvelle carte
+                + Nouvelle
               </button>
             </div>
 
@@ -327,9 +355,42 @@ const AdminHomepage = () => {
 
           {/* Contenu de l'onglet Pictogrammes */}
           <div className={`tab-content ${activeTab === 'pictograms' ? 'active' : ''}`}>
-            <div className="pictograms-sidebar-content">
-              <h3>Pictogrammes</h3>
-              <p>Gestion des pictogrammes</p>
+            <div className="sidebar-header">
+              <h2>Bibliothèques ({pictograms.length})</h2>
+              <button 
+                className="create-map-btn"
+                //onClick={handleCreatePictogram}
+              >
+                + Nouvelle
+              </button>
+            </div>
+
+            <div className="maps-list">
+              {pictograms.length === 0 ? (
+                <div className="no-maps">
+                  Aucune bibliothèque créée.
+                  <br />
+                  Créez votre première bibliothèque !
+                </div>
+              ) : (
+                pictograms.map(pictogram => (
+                  <div
+                    key={pictogram.id}
+                    className={`map-item ${selectedPictogram?.id === pictogram.id ? 'selected' : ''}`}
+                    onClick={() => handlePictogramSelect(pictogram)}
+                  >
+                    <div className="map-item-header">
+                      <h3 className="map-name">{pictogram.name}</h3>
+                    </div>
+                    
+                    <div className="map-info">
+                      <div>
+                        Nombre de pictogrammes :
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -527,6 +588,80 @@ const AdminHomepage = () => {
           ) : activeTab === 'maps' && !selectedMap ? (
             <div className="no-selection">
               <p>Sélectionnez une carte pour voir ses détails</p>
+            </div>
+          ) : activeTab === 'pictograms' && selectedPictogram ? (
+            <div className="details-content">
+              <div className="details-header">
+                <h2>{selectedPictogram.name}</h2>
+              </div>
+              <div className="details-body">
+                <div className="detail-section">
+                  <h3>Actions</h3>
+                  <div className="map-actions">
+                    <button
+                      className="edit-btn"
+                      onClick={() => alert('Fonctionnalité d\'édition à venir...')}
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDeletePictogram(selectedPictogram.id)}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h3>Informations générales</h3>
+                  <div className="detail-item">
+                    <label>Type :</label>
+                    <span 
+                      className="status-badge"
+                      style={{ backgroundColor: '#4caf50' }}
+                    >
+                      {selectedPictogram.type}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Nom du fichier :</label>
+                    <span>{selectedPictogram.fileName}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Chemin complet :</label>
+                    <span>/pictogrammes/{selectedPictogram.fileName}</span>
+                  </div>
+                </div>
+
+                <div className="detail-section">
+                  <h3>Aperçu</h3>
+                  <div className="pictogram-preview">
+                    <img 
+                      src={`/pictogrammes/${selectedPictogram.fileName}`}
+                      alt={selectedPictogram.name}
+                      style={{ 
+                        maxWidth: '64px', 
+                        maxHeight: '64px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '8px'
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div style={{ display: 'none', color: '#666', fontStyle: 'italic' }}>
+                      Image non disponible
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'pictograms' && !selectedPictogram ? (
+            <div className="no-selection">
+              <p>Sélectionnez un pictogramme pour voir ses détails</p>
             </div>
           ) : activeTab === 'pictograms' ? (
             <div className="pictograms-main-content">
