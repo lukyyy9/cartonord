@@ -1,6 +1,56 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs-extra');
 const PictogramsService = require('../services/PictogramsService');
 const router = express.Router();
+
+// Configuration de multer pour l'upload de fichiers
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    try {
+      // Récupérer l'ID de la librairie depuis les paramètres de formulaire
+      const libraryId = req.body.libraryId;
+      if (!libraryId) {
+        return cb(new Error('ID de librairie requis'), null);
+      }
+
+      // Créer le chemin de destination
+      const uploadPath = path.join(__dirname, '../../uploads/pictograms', libraryId.toString());
+      
+      // Créer le dossier s'il n'existe pas
+      await fs.ensureDir(uploadPath);
+      
+      cb(null, uploadPath);
+    } catch (error) {
+      cb(error, null);
+    }
+  },
+  filename: (req, file, cb) => {
+    // Garder le nom original du fichier avec extension
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, originalName);
+  }
+});
+
+// Filtre pour n'accepter que les images
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Type de fichier non autorisé. Seules les images (JPEG, PNG, GIF, SVG) sont acceptées.'), false);
+  }
+};
+
+// Configuration multer
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  }
+});
 
 // GET /api/pictograms/categories - Récupérer toutes les catégories de pictogrammes
 router.get('/categories', async (req, res) => {
@@ -63,7 +113,93 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/pictograms - Créer un ou plusieurs pictogrammes
+// POST /api/pictograms/upload - Upload de fichiers pictogrammes
+router.post('/upload', upload.array('pictograms', 20), async (req, res) => {
+  try {
+    const { libraryId } = req.body;
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ 
+        error: 'Aucun fichier uploadé' 
+      });
+    }
+
+    if (!libraryId) {
+      return res.status(400).json({ 
+        error: 'ID de librairie requis' 
+      });
+    }
+
+    // Préparer les données pour chaque pictogramme
+    const pictogramsData = [];
+    
+    for (const file of files) {
+      const fileName = file.filename;
+      const nameWithoutExt = path.parse(fileName).name;
+      
+      // Construire les chemins relatifs
+      const relativePath = `/uploads/pictograms/${libraryId}/${fileName}`;
+      const publicUrl = `/api/uploads/pictograms/${libraryId}/${fileName}`;
+      
+      pictogramsData.push({
+        name: nameWithoutExt,
+        category: null, // Peut être étendu plus tard
+        filePath: relativePath,
+        publicUrl: publicUrl,
+        libraryId: libraryId, // Garder comme UUID string
+        metadata: {
+          originalFileName: file.originalname,
+          fileSize: file.size,
+          fileType: file.mimetype,
+          uploadDate: new Date().toISOString()
+        }
+      });
+    }
+
+    // Créer les pictogrammes en base de données
+    const result = await PictogramsService.createMultiplePictograms(pictogramsData);
+    
+    if (result.failed > 0) {
+      // Il y a eu des erreurs pour certains pictogrammes
+      return res.status(207).json({
+        message: `${result.created} pictogrammes créés avec succès, ${result.failed} échecs`,
+        result: result
+      });
+    } else {
+      // Tous les pictogrammes ont été créés avec succès
+      return res.status(201).json({
+        message: `${result.created} pictogrammes uploadés et créés avec succès`,
+        pictograms: result.success,
+        created: result.created
+      });
+    }
+
+  } catch (error) {
+    console.error('Erreur lors de l\'upload des pictogrammes:', error);
+    
+    // Gérer les erreurs spécifiques de multer
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'Fichier trop volumineux. Taille maximale: 5MB' 
+        });
+      }
+      if (error.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ 
+          error: 'Trop de fichiers. Maximum: 20 fichiers' 
+        });
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'Erreur lors de l\'upload des pictogrammes',
+      message: error.message 
+    });
+  }
+});
+
+// POST /api/pictograms - Créer un ou plusieurs pictogrammes (sans upload de fichiers)
 router.post('/', async (req, res) => {
   try {
     const data = req.body;

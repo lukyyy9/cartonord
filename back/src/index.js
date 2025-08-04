@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const healthRoutes = require('./routes/health');
@@ -18,6 +19,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json({ limit: '5000mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Servir les fichiers uploadés statiquement
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes publiques
 app.use('/health', healthRoutes);

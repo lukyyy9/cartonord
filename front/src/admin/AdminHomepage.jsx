@@ -374,40 +374,30 @@ const AdminHomepage = () => {
     setUploadProgress(0);
 
     try {
-      const pictogramsData = [];
+      // Créer FormData pour l'upload des fichiers
+      const formData = new FormData();
       
-      // Préparer les données pour chaque pictogramme
-      for (let i = 0; i < pictogramFiles.length; i++) {
-        const file = pictogramFiles[i];
-        const fileName = file.name;
-        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
-        
-        // Pour cette implémentation, nous simulons l'upload des fichiers
-        // Dans un vrai système, il faudrait d'abord uploader les fichiers vers un serveur de fichiers
-        const publicUrl = `/pictogrammes/${fileName}`;
-        
-        pictogramsData.push({
-          name: nameWithoutExt,
-          category: null, // Sera demandé dans une future version
-          filePath: `/pictogrammes/${fileName}`,
-          publicUrl: publicUrl,
-          libraryId: selectedLibrary.id,
-          metadata: {
-            originalFileName: fileName,
-            fileSize: file.size,
-            fileType: file.type
-          }
-        });
-      }
+      // Ajouter l'ID de la bibliothèque
+      formData.append('libraryId', selectedLibrary.id);
+      
+      // Ajouter tous les fichiers
+      pictogramFiles.forEach((file) => {
+        formData.append('pictograms', file);
+      });
 
-      // Envoyer les pictogrammes à l'API
-      const response = await apiService.post('/api/pictograms', pictogramsData);
+      // Simulation du progrès d'upload
+      setUploadProgress(50);
+
+      // Envoyer les fichiers à l'API via la nouvelle route d'upload
+      const response = await apiService.uploadFiles('/api/pictograms/upload', formData);
       
       if (!response.ok) {
-        throw new Error('Erreur lors de la création des pictogrammes');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de l\'upload des pictogrammes');
       }
 
       const result = await response.json();
+      setUploadProgress(100);
       
       // Rafraîchir la bibliothèque sélectionnée
       const libraryResponse = await apiService.get(`/api/libraries/${selectedLibrary.id}/pictograms`);
@@ -427,13 +417,13 @@ const AdminHomepage = () => {
           : lib
       ));
 
-      alert(`${result.created || pictogramsData.length} pictogrammes ajoutés avec succès !`);
+      alert(`${result.created || pictogramFiles.length} pictogrammes uploadés et ajoutés avec succès !`);
       setShowAddPictogramModal(false);
       setPictogramFiles([]);
       
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
-      alert('Erreur lors de l\'ajout des pictogrammes : ' + error.message);
+      alert('Erreur lors de l\'upload des pictogrammes : ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -805,7 +795,7 @@ const AdminHomepage = () => {
                       className="edit-info-btn"
                       onClick={() => handleEditLibrary(selectedLibrary)}
                     >
-                      Modifier informations
+                      Renommer
                     </button>
                     <button
                       className="delete-btn"
@@ -861,7 +851,7 @@ const AdminHomepage = () => {
                           <div className="pictogram-preview">
                             {pictogram.publicUrl ? (
                               <img 
-                                src={pictogram.publicUrl}
+                                src={`http://localhost:3001${pictogram.publicUrl}`}
                                 alt={pictogram.name}
                                 style={{ 
                                   maxWidth: '32px', 

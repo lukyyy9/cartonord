@@ -104,6 +104,46 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Méthode spéciale pour l'upload de fichiers
+  async uploadFiles(endpoint, formData) {
+    const url = `${this.baseURL}${endpoint}`;
+    const token = localStorage.getItem('accessToken');
+
+    const config = {
+      method: 'POST',
+      headers: {},
+      body: formData,
+    };
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    try {
+      let response = await fetch(url, config);
+
+      // Si le token est expiré, essayer de le rafraîchir
+      if (response.status === 401 && token) {
+        const refreshSuccess = await this.refreshToken();
+        if (refreshSuccess) {
+          // Retry la requête avec le nouveau token
+          const newToken = localStorage.getItem('accessToken');
+          config.headers.Authorization = `Bearer ${newToken}`;
+          response = await fetch(url, config);
+        } else {
+          // Rediriger vers la page de connexion
+          window.location.href = '/admin/login';
+          return;
+        }
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      throw error;
+    }
+  }
 }
 
 export const apiService = new ApiService();
