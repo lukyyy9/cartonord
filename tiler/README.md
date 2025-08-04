@@ -1,24 +1,25 @@
 # Cartonord Tiler
 
-Microservice for generating vector tilesets from GeoJSON data using Tippecanoe, optimized for high-performance tile generation and processing.
+Microservice for generating vector tilesets from GeoJSON data using Tippecanoe, designed for seamless integration with the Cartonord backend API.
 
 ## Overview
 
-The tiler service converts GeoJSON data into optimized MBTiles files using Tippecanoe. It handles tile generation requests from the backend, processes large datasets efficiently, and provides comprehensive monitoring of generation status. The service is designed for scalability and can handle multiple concurrent tile generation jobs.
+The tiler service converts GeoJSON data into optimized MBTiles files using Tippecanoe. It receives tile generation requests from the backend service, processes the data efficiently, and stores the generated tilesets for serving by the tile server. The service is designed for reliability and integrates directly with the Cartonord map management workflow.
 
 ## Features
 
 - **Tippecanoe Integration**: Leverages Tippecanoe for optimal vector tile generation
-- **Batch Processing**: Handles multiple tileset generation jobs concurrently
-- **Progress Monitoring**: Real-time status updates for tile generation
+- **Backend Integration**: Direct API communication with Cartonord backend
+- **GeoJSON Processing**: Handles complete map data including layers and POIs
+- **File Upload Support**: Accepts both file uploads and direct data payloads
 - **Error Handling**: Comprehensive error recovery and reporting
-- **File Management**: Temporary file cleanup and storage optimization
+- **File Management**: Automatic temporary file cleanup and storage optimization
 - **Health Monitoring**: Service health checks including Tippecanoe availability
-- **Configurable Output**: Customizable zoom levels, compression, and tile properties
+- **Configurable Output**: Customizable zoom levels and tile properties
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 21.11.0
 - **Framework**: Express.js for API endpoints
 - **Tile Generator**: Tippecanoe (compiled from source)
 - **File System**: fs-extra for advanced file operations
@@ -58,7 +59,6 @@ NODE_ENV=production
 LOG_LEVEL=info
 
 # Processing
-MAX_CONCURRENT_JOBS=3
 TEMP_DIRECTORY=/tmp
 OUTPUT_DIRECTORY=/data/tilesets
 
@@ -108,88 +108,74 @@ brew install tippecanoe
 
 ## API Endpoints
 
-### Tileset Generation
+### Tileset Generation from File Upload
 
 ```http
-POST /generate
+POST /api/tileset/generate
 ```
 
-Generates a vector tileset from GeoJSON data.
+Generates a vector tileset from an uploaded GeoJSON file.
+
+**Request:**
+- `Content-Type: multipart/form-data`
+- File: GeoJSON file
+- Body parameters:
+  - `projectId`: Map project identifier
+  - `layerName`: Layer name (optional, defaults to 'default')
+  - `minZoom`: Minimum zoom level (optional, default: 0)
+  - `maxZoom`: Maximum zoom level (optional, default: 14)
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "tilesetId": "550e8400-e29b-41d4-a716-446655440000",
+  "path": "/data/tilesets/550e8400-e29b-41d4-a716-446655440000.mbtiles",
+  "stats": {
+    "size": 2048576,
+    "created": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Tileset Generation from Data
+
+```http
+POST /api/tileset/generate-from-data
+```
+
+Generates a vector tileset from GeoJSON data in the request body (used by backend).
 
 **Request Body:**
 
 ```json
 {
+  "geojson": {
+    "type": "FeatureCollection",
+    "features": [
+      // Combined features from all layers and POIs
+    ]
+  },
   "projectId": "550e8400-e29b-41d4-a716-446655440000",
-  "layers": [
-    {
-      "name": "layer1",
-      "geojson": { /* GeoJSON FeatureCollection */ },
-      "style": {
-        "color": "#3388ff",
-        "opacity": 0.7,
-        "zIndex": 1
-      }
-    }
-  ],
-  "options": {
-    "maxZoom": 14,
-    "minZoom": 0,
-    "simplification": 4,
-    "attribution": "© Cartonord"
+  "layerName": "map-550e8400-e29b-41d4-a716-446655440000",
+  "minZoom": 0,
+  "maxZoom": 18
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "tilesetId": "550e8400-e29b-41d4-a716-446655440000",
+  "path": "/data/tilesets/550e8400-e29b-41d4-a716-446655440000.mbtiles",
+  "stats": {
+    "size": 2048576,
+    "created": "2024-01-15T10:30:00Z"
   }
 }
-```
-
-**Response:**
-
-```json
-{
-  "jobId": "job-uuid",
-  "status": "started",
-  "projectId": "550e8400-e29b-41d4-a716-446655440000",
-  "outputPath": "/data/tilesets/550e8400-e29b-41d4-a716-446655440000.mbtiles",
-  "startedAt": "2024-01-15T10:30:00Z"
-}
-```
-
-### Job Status
-
-```http
-GET /status/{jobId}
-```
-
-Returns the current status of a tile generation job.
-
-**Response:**
-
-```json
-{
-  "jobId": "job-uuid",
-  "status": "processing",
-  "progress": 65,
-  "projectId": "550e8400-e29b-41d4-a716-446655440000",
-  "startedAt": "2024-01-15T10:30:00Z",
-  "estimatedCompletion": "2024-01-15T10:35:00Z",
-  "processedFeatures": 1300,
-  "totalFeatures": 2000
-}
-```
-
-**Status Values:**
-
-- `queued`: Job is waiting to start
-- `processing`: Tile generation in progress
-- `completed`: Successfully completed
-- `failed`: Generation failed
-- `cancelled`: Job was cancelled
-
-### Job Management
-
-```http
-GET    /jobs                    # List all jobs
-DELETE /jobs/{jobId}            # Cancel job
-POST   /jobs/{jobId}/retry      # Retry failed job
 ```
 
 ### Health Monitoring
@@ -199,6 +185,31 @@ GET /health                     # Basic health check
 GET /health/detailed           # Detailed health with Tippecanoe status
 ```
 
+**Detailed Health Response:**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "service": "cartonord-tiler",
+  "version": "1.0.0",
+  "checks": {
+    "tippecanoe": {
+      "status": "ok",
+      "version": "2.17.0",
+      "available": true
+    },
+    "directories": {
+      "temp": "ok",
+      "working": "ok"
+    },
+    "environment": {
+      "port": "ok"
+    }
+  }
+}
+```
+
 ## Tile Generation Process
 
 ### Processing Pipeline
@@ -206,209 +217,129 @@ GET /health/detailed           # Detailed health with Tippecanoe status
 1. **Input Validation**: Validate GeoJSON data structure and properties
 2. **Temporary File Creation**: Create temporary GeoJSON files for processing
 3. **Tippecanoe Execution**: Run Tippecanoe with optimized parameters
-4. **Progress Monitoring**: Track generation progress and resource usage
-5. **Output Validation**: Verify generated MBTiles file integrity
-6. **File Management**: Move to final location and cleanup temporary files
-7. **Metadata Generation**: Create tileset metadata and statistics
+4. **Output Validation**: Verify generated MBTiles file integrity
+5. **File Management**: Move to final location and cleanup temporary files
+6. **Statistics Collection**: Gather file size and creation metadata
+
+### Backend Integration
+
+The tiler service is primarily used by the backend when maps are saved:
+
+```javascript
+// Backend calls tiler when updating a map
+const response = await fetch(`${TILER_SERVICE_URL}/api/tileset/generate-from-data`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    geojson: combinedGeoJSON,
+    projectId: map.id,
+    layerName: `map-${map.id}`,
+    minZoom: config?.minZoom || 0,
+    maxZoom: config?.maxZoom || 18
+  })
+});
+```
 
 ### Tippecanoe Command Generation
 
 ```javascript
-const generateCommand = (layers, options) => {
-  const cmd = [
+const generateCommand = (inputPath, outputPath, options) => {
+  return [
     'tippecanoe',
-    '--output', options.outputPath,
+    '--output', outputPath,
     '--maximum-zoom', options.maxZoom,
     '--minimum-zoom', options.minZoom,
-    '--base-zoom', options.baseZoom,
-    '--simplification', options.simplification,
+    '--base-zoom', options.baseZoom || options.maxZoom,
+    '--simplification', options.simplification || 4,
     '--force',
-    '--quiet'
+    '--quiet',
+    '--layer', options.layerName,
+    inputPath
   ];
-
-  // Add layer-specific options
-  layers.forEach((layer, index) => {
-    cmd.push('--layer', layer.name);
-    cmd.push(layer.tempFile);
-  });
-
-  return cmd;
 };
 ```
 
 ### Error Recovery
 
-```javascript
-const handleTippecanoeError = (error, jobId) => {
-  const errorTypes = {
-    'out of memory': 'INSUFFICIENT_MEMORY',
-    'disk full': 'INSUFFICIENT_DISK_SPACE',
-    'invalid geometry': 'INVALID_GEOMETRY',
-    'timeout': 'PROCESSING_TIMEOUT'
-  };
+The service provides detailed error information for debugging:
 
-  const errorType = detectErrorType(error.message);
-  
+```javascript
+const handleTippecanoeError = (error, code, stderr) => {
   logger.error('Tippecanoe generation failed', {
-    jobId,
-    errorType,
-    message: error.message,
-    stack: error.stack
+    exitCode: code,
+    stderr,
+    error: error.message
   });
 
   return {
-    error: errorType,
-    message: error.message,
-    recoverable: errorType !== 'INVALID_GEOMETRY'
+    success: false,
+    error: 'Tileset generation failed',
+    details: stderr,
+    exitCode: code
   };
 };
 ```
 
-## Performance Optimization
+## File Structure
 
-### Concurrent Processing
-
-```javascript
-class JobQueue {
-  constructor(maxConcurrent = 3) {
-    this.maxConcurrent = maxConcurrent;
-    this.running = new Map();
-    this.queue = [];
-  }
-
-  async add(job) {
-    if (this.running.size < this.maxConcurrent) {
-      return this.execute(job);
-    } else {
-      return new Promise((resolve, reject) => {
-        this.queue.push({ job, resolve, reject });
-      });
-    }
-  }
-
-  async execute(job) {
-    const jobId = uuidv4();
-    this.running.set(jobId, job);
-    
-    try {
-      const result = await this.processJob(job);
-      this.running.delete(jobId);
-      this.processQueue();
-      return result;
-    } catch (error) {
-      this.running.delete(jobId);
-      this.processQueue();
-      throw error;
-    }
-  }
-}
+```
+src/
+├── index.js                 # Express application entry point
+├── routes/
+│   ├── tileset.js          # Tileset generation endpoints
+│   └── health.js           # Health check endpoints
+├── services/
+│   ├── TilesetService.js   # Core tileset generation logic
+│   └── HealthService.js    # Health monitoring service
+├── middlewares/
+│   ├── logging.js          # Request logging
+│   └── errorHandler.js     # Error handling
+└── utils/
+    └── logger.js           # Winston logger configuration
 ```
 
-### Memory Management
+## Service Integration
+
+### Health Monitoring
+
+The [`HealthService`](src/services/HealthService.js) provides comprehensive monitoring:
+
+- Tippecanoe availability and version checking
+- Directory permissions and existence verification
+- Environment configuration validation
+
+### Logging
+
+Structured logging with Winston provides detailed operation tracking:
 
 ```javascript
-// Monitor memory usage during processing
-const monitorMemory = (jobId) => {
-  const interval = setInterval(() => {
-    const usage = process.memoryUsage();
-    
-    if (usage.heapUsed > MEMORY_THRESHOLD) {
-      logger.warn('High memory usage detected', {
-        jobId,
-        heapUsed: usage.heapUsed,
-        heapTotal: usage.heapTotal
-      });
-    }
-  }, 1000);
-
-  return interval;
-};
-```
-
-### Disk Space Management
-
-```javascript
-// Check available disk space before processing
-const checkDiskSpace = async (requiredSpace) => {
-  const stats = await fs.statfs(TEMP_DIRECTORY);
-  const availableSpace = stats.bavail * stats.bsize;
-  
-  if (availableSpace < requiredSpace * 2) { // 2x safety margin
-    throw new Error('Insufficient disk space');
-  }
-};
-```
-
-## Monitoring & Logging
-
-### Structured Logging
-
-```javascript
-const logger = winston.createLogger({
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'tiler' },
-  transports: [
-    new winston.transports.File({ filename: 'tiler.log' }),
-    new winston.transports.Console()
-  ]
+logger.info('Tileset generation started', {
+  projectId,
+  layerName,
+  dataSize: JSON.stringify(geojson).length
 });
 ```
 
-### Metrics Collection
+## Performance
 
-```javascript
-const metrics = {
-  jobsCompleted: 0,
-  jobsFailed: 0,
-  averageProcessingTime: 0,
-  totalFeaturesProcessed: 0,
-  averageFileSize: 0
-};
+- **Efficient Processing**: Optimized Tippecanoe parameters for fast generation
+- **Memory Management**: Careful handling of large GeoJSON datasets
+- **Temp File Cleanup**: Automatic cleanup of temporary files
+- **Error Handling**: Robust error recovery with detailed logging
 
-// Update metrics after job completion
-const updateMetrics = (job, result) => {
-  metrics.jobsCompleted++;
-  metrics.totalFeaturesProcessed += result.featureCount;
-  metrics.averageProcessingTime = 
-    (metrics.averageProcessingTime * (metrics.jobsCompleted - 1) + result.processingTime) 
-    / metrics.jobsCompleted;
-};
-```
+## Security
 
-## Error Handling
+- **Input Validation**: Comprehensive GeoJSON validation
+- **File System Security**: Secure temporary file handling
+- **Resource Limits**: Protection against resource exhaustion
+- **Path Security**: Prevention of path traversal attacks
 
-### Common Error Scenarios
+## Monitoring
 
-```javascript
-const errorHandlers = {
-  TIPPECANOE_NOT_FOUND: (error) => ({
-    status: 'failed',
-    error: 'Tippecanoe not installed or not in PATH',
-    resolution: 'Install Tippecanoe and ensure it\'s available in PATH'
-  }),
-
-  INSUFFICIENT_MEMORY: (error) => ({
-    status: 'failed',
-    error: 'Insufficient memory for processing',
-    resolution: 'Reduce dataset size or increase available memory'
-  }),
-
-  INVALID_GEOJSON: (error) => ({
-    status: 'failed',
-    error: 'Invalid GeoJSON data provided',
-    resolution: 'Validate GeoJSON structure and geometry'
-  }),
-
-  DISK_FULL: (error) => ({
-    status: 'failed',
-    error: 'Insufficient disk space',
-    resolution: 'Free disk space or use external storage'
-  })
-};
-```
+- **Structured Logging**: JSON logs with correlation IDs
+- **Health Endpoints**: Service dependency monitoring
+- **Error Tracking**: Detailed error reporting with context
+- **Performance Metrics**: Generation time and file size tracking
 
 ## Development
 
@@ -417,7 +348,6 @@ const errorHandlers = {
 ```bash
 npm test                    # Run test suite
 npm run test:integration   # Integration tests with Tippecanoe
-npm run test:performance   # Performance benchmarks
 ```
 
 ### Debugging
@@ -426,22 +356,31 @@ npm run test:performance   # Performance benchmarks
 DEBUG=tiler:* npm run dev
 ```
 
-### Local Development without Tippecanoe
+### Mock Development
+
+For development without Tippecanoe:
 
 ```javascript
-// Mock Tippecanoe for development
-if (process.env.NODE_ENV === 'development' && !process.env.TIPPECANOE_AVAILABLE) {
-  const mockTippecanoe = require('./mocks/tippecanoe');
-  // Use mock implementation
-}
+// Set environment variable to use mock
+TIPPECANOE_MOCK=true npm run dev
 ```
 
-## Security
+## Production Deployment
 
-- **Input Sanitization**: Validate all GeoJSON inputs
-- **File System Security**: Prevent path traversal attacks
-- **Resource Limits**: CPU and memory usage constraints
-- **Temp File Cleanup**: Secure cleanup of temporary files
+### Environment Setup
+
+1. Ensure Tippecanoe is properly installed
+2. Configure data directory permissions
+3. Set appropriate resource limits
+4. Enable log aggregation
+5. Set up monitoring and alerting
+
+### Health Checks
+
+The service provides health endpoints for container orchestration:
+
+- `/health` - Basic liveness check
+- `/health/detailed` - Readiness check with dependencies
 
 ## Future Enhancements
 

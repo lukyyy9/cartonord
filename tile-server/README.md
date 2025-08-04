@@ -18,7 +18,7 @@ The tile server provides fast access to vector tiles stored in MBTiles format. I
 
 ## Tech Stack
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 21.11.0
 - **Framework**: Express.js with compression middleware
 - **Database**: SQLite3 for MBTiles file access
 - **Compression**: Gzip for tile compression
@@ -78,8 +78,8 @@ Serves vector tiles in Protocol Buffer format.
 
 **Parameters:**
 
-- `project-id`: UUID of the project
-- `z`: Zoom level (0-14)
+- `project-id`: UUID of the project/map
+- `z`: Zoom level (0-18)
 - `x`: Tile column coordinate
 - `y`: Tile row coordinate
 
@@ -110,14 +110,14 @@ Returns tileset metadata and configuration.
 
 ```json
 {
-  "name": "Project Name",
+  "name": "Map Name",
   "format": "pbf",
   "bounds": [-180, -85.0511, 180, 85.0511],
   "center": [2.3522, 48.8566, 10],
   "minzoom": 0,
-  "maxzoom": 14,
+  "maxzoom": 18,
   "attribution": "© Cartonord",
-  "description": "Project description",
+  "description": "Map description",
   "version": "1.0.0"
 }
 ```
@@ -137,7 +137,7 @@ Lists available projects with basic information.
   "projects": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
-      "name": "Project Name",
+      "name": "Map Name",
       "lastModified": "2024-01-15T10:30:00Z",
       "fileSize": 2048576,
       "bounds": [-180, -85.0511, 180, 85.0511]
@@ -215,20 +215,45 @@ const mapStyle = {
   sources: {
     'cartonord-tiles': {
       type: 'vector',
-      tiles: ['http://localhost:3003/tiles/{project-id}/{z}/{x}/{y}.pbf'],
+      tiles: ['http://localhost:3003/tiles/{map-id}/{z}/{x}/{y}.pbf'],
       minzoom: 0,
-      maxzoom: 14
+      maxzoom: 18
     }
   },
   layers: [
     {
-      id: 'layer-name',
+      id: 'polygon-layer',
       type: 'fill',
       source: 'cartonord-tiles',
-      'source-layer': 'layer-name',
+      'source-layer': 'map-{map-id}',
+      filter: ['==', '$type', 'Polygon'],
       paint: {
-        'fill-color': '#3388ff',
-        'fill-opacity': 0.7
+        'fill-color': ['get', 'color'],
+        'fill-opacity': ['get', 'opacity']
+      }
+    },
+    {
+      id: 'line-layer',
+      type: 'line',
+      source: 'cartonord-tiles',
+      'source-layer': 'map-{map-id}',
+      filter: ['==', '$type', 'LineString'],
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2,
+        'line-opacity': ['get', 'opacity']
+      }
+    },
+    {
+      id: 'point-layer',
+      type: 'circle',
+      source: 'cartonord-tiles',
+      'source-layer': 'map-{map-id}',
+      filter: ['==', '$type', 'Point'],
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': 5,
+        'circle-opacity': ['get', 'opacity']
       }
     }
   ]
@@ -269,10 +294,15 @@ app.use('/tiles', (req, res, next) => {
 
 ### Database Optimization
 
+The [`TileService`](src/services/TileService.js) provides optimized SQLite queries:
+
 ```javascript
-// Optimized SQLite query for tile retrieval
-const getTile = (zoom, x, y) => {
+// Optimized tile retrieval
+const getTile = (projectId, zoom, x, y) => {
   return new Promise((resolve, reject) => {
+    const mbtilesPath = path.join(this.tilesDirectory, `${projectId}.mbtiles`);
+    const db = new sqlite3.Database(mbtilesPath, sqlite3.OPEN_READONLY);
+    
     const query = `
       SELECT tile_data 
       FROM tiles 
@@ -280,6 +310,7 @@ const getTile = (zoom, x, y) => {
     `;
     
     db.get(query, [zoom, x, y], (err, row) => {
+      db.close();
       if (err) reject(err);
       else resolve(row?.tile_data);
     });
@@ -289,37 +320,51 @@ const getTile = (zoom, x, y) => {
 
 ### Compression
 
-- **Gzip**: Automatic compression for text responses
-- **Brotli**: Optional Brotli compression for better ratios
-- **Pre-compressed**: Static file pre-compression
+- **Gzip**: Automatic compression for tile responses
+- **Content-Encoding**: Proper headers for client decompression
+- **Tile Optimization**: Pre-compressed tiles in MBTiles format
+
+## Service Integration
+
+### Backend Integration
+
+The tile server integrates seamlessly with the Cartonord backend:
+
+- **Map Publishing**: Tiles are served for published maps only
+- **Dynamic Routing**: Map IDs correspond to backend map entities
+- **Metadata Sync**: Tileset metadata reflects map configuration
+
+### Frontend Integration
+
+The frontend [`MapViewer`](../front/src/user/MapViewer.jsx) and [`MapEditor`](../front/src/admin/MapEditor.jsx) consume tiles:
+
+```javascript
+// Public map viewer configuration
+const TILE_SERVER_URL = 'http://localhost:3003';
+const tileSource = `${TILE_SERVER_URL}/tiles/${mapData.id}/{z}/{x}/{y}.pbf`;
+```
 
 ## Monitoring
 
-### Metrics
+### Health Checks
 
-Track important performance indicators:
+The [`HealthService`](src/services/HealthService.js) provides comprehensive monitoring:
 
-```javascript
-const metrics = {
-  requestsPerSecond: 0,
-  averageResponseTime: 0,
-  cacheHitRatio: 0,
-  errorRate: 0,
-  activeConnections: 0
-};
-```
+- **Tile Directory**: Verification of tiles directory existence and permissions
+- **Database Access**: SQLite database connectivity checks
+- **File System**: Available disk space and read permissions
 
 ### Logging
 
 Structured logging for operational insights:
 
 ```javascript
-logger.info('Tile request', {
-  project: projectId,
+logger.info('Tile served', {
+  projectId,
   zoom: z,
   coordinates: { x, y },
   responseTime: Date.now() - startTime,
-  cacheHit: cacheHit,
+  tileSize: tileData?.length || 0,
   clientIP: req.ip
 });
 ```
@@ -329,27 +374,50 @@ logger.info('Tile request', {
 ### Common Error Responses
 
 ```javascript
-// Tile not found
+// Tile not found (404)
 {
   "error": "Tile not found",
-  "code": "TILE_NOT_FOUND",
-  "project": "project-id",
+  "projectId": "project-id",
   "coordinates": { "z": 10, "x": 512, "y": 384 }
 }
 
-// Project not found
+// Project not found (404)
 {
   "error": "Project not found",
-  "code": "PROJECT_NOT_FOUND",
-  "project": "invalid-project-id"
+  "projectId": "invalid-project-id"
 }
 
-// Invalid coordinates
+// Invalid coordinates (400)
 {
   "error": "Invalid tile coordinates",
-  "code": "INVALID_COORDINATES",
-  "coordinates": { "z": "invalid", "x": "invalid", "y": "invalid" }
+  "message": "Coordinates must be valid integers"
 }
+
+// Internal server error (500)
+{
+  "error": "Database error",
+  "message": "Failed to read MBTiles file"
+}
+```
+
+## File Structure
+
+```
+src/
+├── index.js                 # Express application entry point
+├── routes/
+│   ├── tiles.js            # Tile serving endpoints
+│   ├── projects.js         # Project listing endpoints
+│   └── health.js           # Health check endpoints
+├── services/
+│   ├── TileService.js      # Core tile serving logic
+│   └── HealthService.js    # Health monitoring service
+├── middlewares/
+│   ├── caching.js          # Cache control middleware
+│   ├── logging.js          # Request logging
+│   └── errorHandler.js     # Error handling
+└── utils/
+    └── logger.js           # Winston logger configuration
 ```
 
 ## Development
@@ -358,7 +426,7 @@ logger.info('Tile request', {
 
 ```bash
 npm test                    # Run test suite
-npm run test:integration   # Integration tests
+npm run test:integration   # Integration tests with MBTiles
 npm run test:performance   # Performance benchmarks
 ```
 
@@ -368,17 +436,51 @@ npm run test:performance   # Performance benchmarks
 DEBUG=tile-server:* npm run dev
 ```
 
+### Mock Development
+
+For development without MBTiles files:
+
+```javascript
+// Set environment variable for mock responses
+MOCK_TILES=true npm run dev
+```
+
 ## Security
 
 - **Input Validation**: Coordinate and project ID validation
-- **Path Traversal Protection**: Secure file access
+- **Path Traversal Protection**: Secure file access with path validation
 - **Rate Limiting**: Request throttling for abuse prevention
 - **CORS Configuration**: Controlled cross-origin access
+- **File Access Control**: Restricted access to tiles directory only
+
+## Production Deployment
+
+### Environment Setup
+
+1. Configure tiles directory permissions
+2. Set appropriate cache headers
+3. Enable compression
+4. Configure monitoring and logging
+5. Set up health check endpoints
+
+### Health Checks
+
+The service provides health endpoints for container orchestration:
+
+- `/health` - Basic liveness check
+- Health monitoring includes tiles directory and database access verification
+
+## Performance Considerations
+
+- **Connection Pooling**: Efficient SQLite connection management
+- **Memory Usage**: Optimized tile streaming for large files
+- **Disk I/O**: Efficient file system operations
+- **Network**: Optimized response headers and compression
 
 ## Future Enhancements
 
-- **PMTiles Support**: Next-generation tile format
-- **Redis Caching**: Distributed tile caching
-- **CDN Integration**: Content delivery network support
-- **Tile Compression**: Advanced compression algorithms
-- **Real-time Updates**: WebSocket-based tile updates
+- **PMTiles Support**: Next-generation tile format support
+- **Redis Caching**: Distributed tile caching layer
+- **CDN Integration**: Content delivery network compatibility
+- **Tile Streaming**: Progressive tile loading
+- **Real-time Updates**: WebSocket-based tile invalidation
