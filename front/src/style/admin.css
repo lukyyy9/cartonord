@@ -94,8 +94,9 @@
   overflow: hidden;
 }
 
-.maps-sidebar {
-  width: 420px;
+.admin-sidebar {
+  width: 400px;
+  padding: 10px;
   background: rgba(36, 36, 36);
   display: flex;
   flex-direction: column;
