@@ -1,15 +1,15 @@
 /* Styles pour la liste des couches */
 .layer-list {
   position: absolute;
-  top: 70px;
-  left: 10px;
-  background: rgba(36, 36, 36, 0.9);
+  top: 60px;
+  left: 0px;
+  background: rgba(36, 36, 36);
   padding: 10px;
-  border-radius: 10px;
   z-index: 1;
-  max-height: calc(100vh - 100px);
+  height: calc(100vh - 70px);
   overflow-y: auto;
   width: 400px;
+  border-top: 1px solid #4d4d4d;
 }
 
 .layer-list h3 {

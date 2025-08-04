@@ -2,7 +2,7 @@
 
 /* Header administrateur */
 .admin-header {
-  background: black;
+  background: rgba(36, 36, 36);
   color: white;
   padding: 0 20px;
   z-index: 1000;
