@@ -38,6 +38,57 @@ function MapEditor() {
   // Ajoutez un compteur pour garantir l'unicité
   let idCounter = 0;
   
+  // Fonction utilitaire pour masquer un point spécifique dans une source GeoJSON
+  const hidePointInSource = (sourceId, coordinates) => {
+    const source = map.current.getSource(sourceId);
+    if (source && source._data) {
+      const geojsonData = { ...source._data };
+      // Filtrer les features pour exclure ce point spécifique
+      geojsonData.features = geojsonData.features.filter(feature => {
+        if (feature.geometry.type === 'Point') {
+          const isSamePoint = 
+            Math.abs(feature.geometry.coordinates[0] - coordinates[0]) < 0.00001 &&
+            Math.abs(feature.geometry.coordinates[1] - coordinates[1]) < 0.00001;
+          return !isSamePoint; // Exclure ce point
+        }
+        return true; // Garder tous les autres types de géométrie
+      });
+      
+      // Mettre à jour la source avec les nouvelles données
+      source.setData(geojsonData);
+    }
+  };
+
+  // Fonction utilitaire pour restaurer un point dans une source GeoJSON  
+  const restorePointInSource = (sourceId, coordinates, pointData) => {
+    const source = map.current.getSource(sourceId);
+    if (source && source._data) {
+      const geojsonData = { ...source._data };
+      
+      // Vérifier que le point n'existe pas déjà
+      const pointExists = geojsonData.features.some(feature => 
+        feature.geometry.type === 'Point' &&
+        Math.abs(feature.geometry.coordinates[0] - coordinates[0]) < 0.00001 &&
+        Math.abs(feature.geometry.coordinates[1] - coordinates[1]) < 0.00001
+      );
+      
+      if (!pointExists) {
+        // Ajouter le point manquant
+        geojsonData.features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: coordinates
+          },
+          properties: pointData.properties || {}
+        });
+        
+        // Mettre à jour la source avec les nouvelles données
+        source.setData(geojsonData);
+      }
+    }
+  };
+  
   // Fonction pour générer un ID unique pour chaque couche
   const generateUniqueId = (baseName, fileName) => {
     const timestamp = new Date().getTime();
@@ -68,16 +119,38 @@ function MapEditor() {
         
         for (const layer of mapData.layers) {
           if (layer.geojsonData && map.current) {
+            // Filtrer les points qui ont des pictogrammes avant d'ajouter la source
+            let filteredGeojsonData = { ...layer.geojsonData };
+            
+            // Si des POIs avec pictogrammes existent, les retirer des données GeoJSON
+            if (mapData.pointsOfInterest && mapData.pointsOfInterest.length > 0) {
+              const poisWithPictograms = mapData.pointsOfInterest.filter(poi => poi.pictogramFile);
+              
+              if (poisWithPictograms.length > 0) {
+                filteredGeojsonData.features = filteredGeojsonData.features.filter(feature => {
+                  if (feature.geometry.type === 'Point') {
+                    // Vérifier si ce point a un pictogramme
+                    const hasCorrespondingPictogram = poisWithPictograms.some(poi => 
+                      Math.abs(feature.geometry.coordinates[0] - poi.coordinates[0]) < 0.00001 &&
+                      Math.abs(feature.geometry.coordinates[1] - poi.coordinates[1]) < 0.00001
+                    );
+                    return !hasCorrespondingPictogram; // Exclure les points avec pictogrammes
+                  }
+                  return true; // Garder tous les autres types de géométrie
+                });
+              }
+            }
+            
             // Utiliser les IDs de la DB ou générer de nouveaux
             const sourceId = layer.sourceId || `source-${layer.id}`;
             const polygonLayerId = layer.layerIds?.[0] || `polygon-${layer.id}`;
             const lineLayerId = layer.layerIds?.[1] || `line-${layer.id}`;
             const pointLayerId = layer.layerIds?.[2] || `point-${layer.id}`;
             
-            // Ajouter la source GeoJSON à la carte
+            // Ajouter la source GeoJSON à la carte avec les données filtrées
             map.current.addSource(sourceId, {
               type: 'geojson',
-              data: layer.geojsonData
+              data: filteredGeojsonData
             });
             
             // Ajouter les couches pour visualiser les données
@@ -165,35 +238,6 @@ function MapEditor() {
         });
         
         setPointsOfInterest(poisWithMarkers);
-        
-        // Masquer les points qui ont des pictogrammes
-        setTimeout(() => {
-          poisWithMarkers.forEach(poi => {
-            if (poi.pictogramFile && poi.sourceFile) {
-              // Trouver la source correspondante dans la carte
-              const sources = map.current.getStyle().sources;
-              Object.keys(sources).forEach(sourceId => {
-                const source = map.current.getSource(sourceId);
-                if (source && source._data && source._data.features) {
-                  // Filtrer les features pour exclure ce point spécifique
-                  const geojsonData = { ...source._data };
-                  geojsonData.features = geojsonData.features.filter(feature => {
-                    if (feature.geometry.type === 'Point') {
-                      const isSamePoint = 
-                        Math.abs(feature.geometry.coordinates[0] - poi.coordinates[0]) < 0.00001 &&
-                        Math.abs(feature.geometry.coordinates[1] - poi.coordinates[1]) < 0.00001;
-                      return !isSamePoint; // Exclure ce point
-                    }
-                    return true; // Garder tous les autres types de géométrie
-                  });
-                  
-                  // Mettre à jour la source avec les nouvelles données
-                  source.setData(geojsonData);
-                }
-              });
-            }
-          });
-        }, 100);
       }
 
       // Ajuster la vue de la carte selon la configuration
@@ -268,23 +312,7 @@ function MapEditor() {
       
       // Masquer le point original en modifiant la source GeoJSON
       if (currentEditingPOI.sourceId) {
-        const source = map.current.getSource(currentEditingPOI.sourceId);
-        if (source && source._data) {
-          const geojsonData = { ...source._data };
-          // Filtrer les features pour exclure ce point spécifique
-          geojsonData.features = geojsonData.features.filter(feature => {
-            if (feature.geometry.type === 'Point') {
-              const isSamePoint = 
-                Math.abs(feature.geometry.coordinates[0] - currentEditingPOI.coordinates[0]) < 0.00001 &&
-                Math.abs(feature.geometry.coordinates[1] - currentEditingPOI.coordinates[1]) < 0.00001;
-              return !isSamePoint; // Exclure ce point
-            }
-            return true; // Garder tous les autres types de géométrie
-          });
-          
-          // Mettre à jour la source avec les nouvelles données
-          source.setData(geojsonData);
-        }
+        hidePointInSource(currentEditingPOI.sourceId, currentEditingPOI.coordinates);
       }
       
       // Créer un élément DOM pour le marqueur
@@ -327,6 +355,16 @@ function MapEditor() {
         })
       );
     } else {
+      // Pas de pictogramme sélectionné : supprimer le marker existant et restaurer le point
+      if (currentEditingPOI.marker) {
+        currentEditingPOI.marker.remove();
+      }
+      
+      // Restaurer le point original dans la source GeoJSON s'il avait un pictogramme avant
+      if (currentEditingPOI.pictogramFile && currentEditingPOI.sourceId) {
+        restorePointInSource(currentEditingPOI.sourceId, currentEditingPOI.coordinates, currentEditingPOI);
+      }
+      
       // Mettre à jour seulement les données textuelles sans pictogramme
       setPointsOfInterest(prevPoints => 
         prevPoints.map(point => {
@@ -338,7 +376,10 @@ function MapEditor() {
                 ...point.properties,
                 name: editedPOIData.name,
                 description: editedPOIData.description
-              }
+              },
+              pictogram: null,
+              pictogramFile: null,
+              marker: null
             };
           }
           return point;
@@ -1071,18 +1112,30 @@ function MapEditor() {
                 </div>
                 <div className="form-group">
                   <label>Pictogramme</label>
-                  <div 
-                    className="pictogram-preview" 
-                    onClick={openPictogramMenu}
-                    title="Cliquez pour changer de pictogramme"
-                  >
-                    {(selectedPictogram?.file || currentEditingPOI.pictogramFile) ? (
-                      <img 
-                        src={`/pictogrammes/${selectedPictogram?.file || currentEditingPOI.pictogramFile}`} 
-                        alt="Pictogramme" 
-                      />
-                    ) : (
-                      <div className="no-pictogram">Aucun</div>
+                  <div className="pictogram-control">
+                    <div 
+                      className="pictogram-preview" 
+                      onClick={openPictogramMenu}
+                      title="Cliquez pour changer de pictogramme"
+                    >
+                      {(selectedPictogram?.file || currentEditingPOI.pictogramFile) ? (
+                        <img 
+                          src={`/pictogrammes/${selectedPictogram?.file || currentEditingPOI.pictogramFile}`} 
+                          alt="Pictogramme" 
+                        />
+                      ) : (
+                        <div className="no-pictogram">Aucun</div>
+                      )}
+                    </div>
+                    {(selectedPictogram?.file || currentEditingPOI.pictogramFile) && (
+                      <button 
+                        type="button"
+                        className="remove-pictogram-btn"
+                        onClick={() => setSelectedPictogram(null)}
+                        title="Supprimer le pictogramme"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
                 </div>
