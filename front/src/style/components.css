@@ -28,10 +28,8 @@
 }
 
 .loading-message {
-  background: white;
+  background-color: #2b2b2b;
   padding: 20px 40px;
   border-radius: 8px;
   font-size: 16px;
-  color: #333;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
