@@ -530,13 +530,14 @@
 }
 
 .edit-modal {
-  background: white;
+  background: #2f2f2f;
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #4d4d4d;
 }
 
 .edit-modal-header {
@@ -544,12 +545,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #4d4d4d;
+  background-color: #353535;
 }
 
 .edit-modal-header h3 {
   margin: 0;
-  color: #333;
+  color: #ffffff;
   font-size: 18px;
 }
 
@@ -557,7 +559,7 @@
   background: none;
   border: none;
   font-size: 24px;
-  color: #999;
+  color: #ccc;
   cursor: pointer;
   padding: 0;
   width: 30px;
@@ -566,16 +568,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .close-modal-btn:hover {
-  background-color: #f5f5f5;
-  color: #666;
+  background-color: #4d4d4d;
+  color: #ffffff;
 }
 
 .edit-modal-body {
   padding: 20px;
+  background-color: #2f2f2f;
 }
 
 .form-group {
@@ -586,25 +589,32 @@
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
-  color: #333;
+  color: #ffffff;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid #555;
   border-radius: 4px;
   font-size: 14px;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  background-color: #444;
+  color: #ffffff;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #aaa;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.25);
 }
 
 .form-group textarea {
@@ -615,7 +625,7 @@
 .help-text {
   display: block;
   margin-top: 5px;
-  color: #666;
+  color: #ccc;
   font-size: 12px;
 }
 
@@ -624,8 +634,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 20px;
-  border-top: 1px solid #eee;
-  background-color: #f9f9f9;
+  border-top: 1px solid #4d4d4d;
+  background-color: #353535;
 }
 
 .cancel-btn {
