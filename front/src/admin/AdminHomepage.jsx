@@ -14,6 +14,7 @@ const AdminHomepage = () => {
     description: '',
     slug: ''
   });
+  const [activeTab, setActiveTab] = useState('maps');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -245,69 +246,97 @@ const AdminHomepage = () => {
       <AdminHeader />
       
       <div className="admin-content">
-        <div className="maps-sidebar">
-          <div className="sidebar-header">
-            <h2>Cartes ({maps.length})</h2>
+        {/* Panneau latéral avec onglets */}
+        <div className="admin-sidebar">
+          <div className="tabs">
             <button 
-              className="create-map-btn"
-              onClick={handleCreateMap}
+              className={`tab ${activeTab === 'maps' ? 'active' : ''}`}
+              onClick={() => setActiveTab('maps')}
             >
-              + Nouvelle carte
+              Cartes
+            </button>
+            <button 
+              className={`tab ${activeTab === 'pictograms' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pictograms')}
+            >
+              Pictogrammes
             </button>
           </div>
 
-          <div className="maps-list">
-            {maps.length === 0 ? (
-              <div className="no-maps">
-                Aucune carte créée.
-                <br />
-                Créez votre première carte !
-              </div>
-            ) : (
-              maps.map(map => (
-                <div
-                  key={map.id}
-                  className={`map-item ${selectedMap?.id === map.id ? 'selected' : ''}`}
-                  onClick={() => handleMapSelect(map)}
-                >
-                  <div className="map-item-header">
-                    <h3 className="map-name">{map.name}</h3>
-                    <div 
-                      className="map-status"
-                      style={{ backgroundColor: getStatusColor(map.status) }}
-                    >
-                      {getStatusLabel(map.status)}
-                    </div>
-                  </div>
-                  
-                  <div className="map-info">
-                    <div>
-                      MàJ le {formatDate(map.updatedAt)}
-                    </div>
-                    <div>
-                      {map.slug && map.status === 'published' ? (
-                        <a 
-                          href={`/${map.slug}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="slug-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          /{map.slug}
-                        </a>
-                      ) : (
-                        `/${map.slug || ''}`
-                      )}
-                    </div>
-                  </div>
+          {/* Contenu de l'onglet Cartes */}
+          <div className={`tab-content ${activeTab === 'maps' ? 'active' : ''}`}>
+            <div className="sidebar-header">
+              <h2>Cartes ({maps.length})</h2>
+              <button 
+                className="create-map-btn"
+                onClick={handleCreateMap}
+              >
+                + Nouvelle carte
+              </button>
+            </div>
+
+            <div className="maps-list">
+              {maps.length === 0 ? (
+                <div className="no-maps">
+                  Aucune carte créée.
+                  <br />
+                  Créez votre première carte !
                 </div>
-              ))
-            )}
+              ) : (
+                maps.map(map => (
+                  <div
+                    key={map.id}
+                    className={`map-item ${selectedMap?.id === map.id ? 'selected' : ''}`}
+                    onClick={() => handleMapSelect(map)}
+                  >
+                    <div className="map-item-header">
+                      <h3 className="map-name">{map.name}</h3>
+                      <div 
+                        className="map-status"
+                        style={{ backgroundColor: getStatusColor(map.status) }}
+                      >
+                        {getStatusLabel(map.status)}
+                      </div>
+                    </div>
+                    
+                    <div className="map-info">
+                      <div>
+                        MàJ le {formatDate(map.updatedAt)}
+                      </div>
+                      <div>
+                        {map.slug && map.status === 'published' ? (
+                          <a 
+                            href={`/${map.slug}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="slug-link"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            /{map.slug}
+                          </a>
+                        ) : (
+                          `/${map.slug || ''}`
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Contenu de l'onglet Pictogrammes */}
+          <div className={`tab-content ${activeTab === 'pictograms' ? 'active' : ''}`}>
+            <div className="pictograms-sidebar-content">
+              <h3>Pictogrammes</h3>
+              <p>Gestion des pictogrammes</p>
+            </div>
           </div>
         </div>
 
-        <div className="map-details">
-          {selectedMap ? (
+        {/* Zone principale de contenu */}
+        <div className="main-content">
+          {activeTab === 'maps' && selectedMap ? (
             <div className="details-content">
               <div className="details-header">
                 <h2>{selectedMap.name}</h2>
@@ -495,11 +524,20 @@ const AdminHomepage = () => {
                 )}
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'maps' && !selectedMap ? (
             <div className="no-selection">
               <p>Sélectionnez une carte pour voir ses détails</p>
             </div>
-          )}
+          ) : activeTab === 'pictograms' ? (
+            <div className="pictograms-main-content">
+              <div className="pictograms-header">
+                <h2>Gestion des Pictogrammes</h2>
+              </div>
+              <div className="pictograms-content">
+                <p>Interface de gestion des pictogrammes à venir...</p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
