@@ -32,60 +32,6 @@ To run the application:
 docker-compose up -d
 ```
 
-## API Endpoints
-
-### Backend API (Port 3001)
-
-#### Authentication
-
-- `POST /auth/login` - Admin login
-- `GET /auth/me` - Get current admin profile
-- `POST /auth/logout` - Admin logout
-
-#### Maps Management
-
-- `POST /api/maps` - Create new map
-- `GET /api/maps` - List all maps
-- `GET /api/maps/:id` - Get map details with layers and POIs
-- `PUT /api/maps/:id` - Update map with layers and POIs
-- `PATCH /api/maps/:id/metadata` - Update map metadata (name, description, slug)
-- `DELETE /api/maps/:id` - Delete map
-- `POST /api/maps/:id/publish` - Publish map (make public)
-- `POST /api/maps/:id/unpublish` - Unpublish map
-
-#### Public Access
-
-- `GET /:slug` - Get published map by slug (public)
-
-#### Pictograms
-
-- `GET /api/pictograms` - List available pictograms
-- `POST /api/pictograms` - Upload new pictogram
-- `DELETE /api/pictograms/:id` - Delete pictogram
-
-### Tiler Service (Port 3002)
-
-- `POST /api/tileset/generate` - Generate tileset from uploaded GeoJSON file
-- `POST /api/tileset/generate-from-data` - Generate tileset from GeoJSON data (used by backend)
-- `GET /health` - Basic health check
-- `GET /health/detailed` - Detailed health with Tippecanoe status
-
-### Tile Server (Port 3003)
-
-- `GET /tiles/{project-id}/{z}/{x}/{y}.pbf` - Serve vector tiles
-- `GET /tiles/{project-id}/metadata` - Get tileset metadata
-- `GET /projects` - List available projects
-- `GET /health` - Health check
-
-## Tech Stack
-
-- **Frontend**: React 18, MapLibre GL JS, Vite, Nginx
-- **Backend**: Node.js, Express.js, Sequelize ORM
-- **Database**: PostgreSQL 14+ with PostGIS extension
-- **Tile Generation**: Node.js, Tippecanoe
-- **Authentication**: JWT tokens with bcrypt password hashing
-- **Containerization**: Docker with multi-stage builds
-
 ## Data Flow
 
 1. **Import**: Admin imports GeoJSON data via the frontend map editor
@@ -122,35 +68,20 @@ Each service has its own configuration. Check individual service README files:
 ### Service Architecture
 
 ```txt
-┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-│   Frontend  │────────▶│   Backend   │────────▶│  PostgreSQL │
-│   (React)   │         │  (Express)  │         │  + PostGIS  │
-│     :80     │         │    :3001    │         │    :5432    │
-└─────────────┘         └─────────────┘         └─────────────┘
-       │                       │
-       │                       │
-       ▼                       ▼
+┌─────────────┐          ┌─────────────┐          ┌─────────────┐
+│   Frontend  │─────────▶│   Backend   │─────────▶│  PostgreSQL │
+│   (React)   │          │  (Express)  │          │  + PostGIS  │
+│     :80     │          │    :3001    │          │    :5432    │
+└─────────────┘          └─────────────┘          └─────────────┘
+       │                        │
+       │                        │
+       ▼                        ▼
 ┌─────────────┐          ┌─────────────┐
 │ Tile Server │◀──serve──│    Tiler    │
 │  (Express)  │          │  (Express)  │
 │    :3003    │          │    :3002    │
 └─────────────┘          └─────────────┘
 ```
-
-### Development Setup
-
-1. **Clone the repository**
-2. **Start services**: `docker-compose up -d`
-3. **Access admin interface**: <http://localhost:80/admin>
-4. **Default credentials**: admin / admin123
-
-## Health Monitoring
-
-All services provide health endpoints:
-
-- Backend: `/health` and `/health/detailed`
-- Tiler: `/health` and `/health/detailed` (includes Tippecanoe status)
-- Tile Server: `/health`
 
 ## Security
 
@@ -180,6 +111,7 @@ All services provide health endpoints:
 ### Docker Compose
 
 The included `docker-compose.yml` provides a complete production-ready setup with:
+
 - All services properly networked
 - Volume mounts for data persistence
 - Environment variable configuration
