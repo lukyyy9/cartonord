@@ -96,12 +96,13 @@
   width: 420px;
   height: 95%;
   z-index: 2;
+  background-color: rgba(36, 36, 36);
 }
 
 .edit-form {
-  background-color: #333;
   width: 420px;
   height: 100%;
+  border-top: #444 solid 1px;
 }
 
 .edit-header {
@@ -109,7 +110,6 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  border-bottom: 1px solid #444;
 }
 
 .edit-header h3 {
