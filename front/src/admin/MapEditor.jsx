@@ -38,6 +38,36 @@ function MapEditor() {
   // Ajoutez un compteur pour garantir l'unicité
   let idCounter = 0;
   
+  // Fonction utilitaire pour obtenir l'URL correcte d'un pictogramme
+  const getPictogramUrl = (pictogram) => {
+    if (!pictogram) return null;
+    
+    // Si c'est un objet pictogramme complet du backend avec publicUrl
+    if (pictogram.publicUrl) {
+      return `http://localhost:3001${pictogram.publicUrl}`;
+    }
+    
+    // Si c'est un objet avec file ou filePath
+    const file = pictogram.file || pictogram.filePath;
+    if (file) {
+      // Si l'URL commence déjà par /api/, ajouter le host
+      if (file.startsWith('/api/')) {
+        return `http://localhost:3001${file}`;
+      }
+      return `http://localhost:3001/api/uploads/pictograms/${file}`;
+    }
+    
+    // Si c'est juste un nom de fichier (string)
+    if (typeof pictogram === 'string') {
+      if (pictogram.startsWith('/api/')) {
+        return `http://localhost:3001${pictogram}`;
+      }
+      return `http://localhost:3001/api/uploads/pictograms/${pictogram}`;
+    }
+    
+    return null;
+  };
+  
   // Fonction utilitaire pour masquer un point spécifique dans une source GeoJSON
   const hidePointInSource = (sourceId, coordinates) => {
     const source = map.current.getSource(sourceId);
@@ -218,7 +248,8 @@ function MapEditor() {
             el.className = 'marker';
             
             const img = document.createElement('img');
-            img.src = `/pictogrammes/${poi.pictogramFile}`;
+            // Utiliser l'URL du backend
+            img.src = getPictogramUrl({ publicUrl: poi.pictogramFile, file: poi.pictogramFile });
             img.alt = poi.name;
             img.width = 32;
             img.height = 32;
@@ -233,6 +264,8 @@ function MapEditor() {
           
           return {
             ...poi,
+            // Harmoniser les propriétés avec la structure backend
+            pictogramId: poi.pictogram || poi.pictogramId,
             marker
           };
         });
@@ -279,9 +312,11 @@ function MapEditor() {
       description: point.properties?.description || ""
     });
     // Initialiser le pictogramme sélectionné avec celui actuel
-    setSelectedPictogram(point.pictogram ? {
-      id: point.pictogram,
-      file: point.pictogramFile
+    setSelectedPictogram(point.pictogramId ? {
+      id: point.pictogramId,
+      publicUrl: point.pictogramFile,
+      file: point.pictogramFile,
+      name: point.pictogramName || "Pictogramme"
     } : null);
     setShowEditForm(true);
   };
@@ -303,6 +338,12 @@ function MapEditor() {
   const handleSavePOI = () => {
     if (!currentEditingPOI || !editedPOIData) return;
     
+    console.log('Sauvegarde POI:', {
+      poi: currentEditingPOI,
+      editedData: editedPOIData,
+      selectedPictogram: selectedPictogram
+    });
+    
     // Appliquer le pictogramme sélectionné s'il y en a un
     if (selectedPictogram) {
       // Si le point a déjà un marker sur la carte, le supprimer
@@ -321,7 +362,7 @@ function MapEditor() {
       
       // Utilisation d'une image réelle au lieu de background-image
       const img = document.createElement('img');
-      img.src = `/pictogrammes/${selectedPictogram.file}`;
+      img.src = getPictogramUrl(selectedPictogram);
       img.alt = selectedPictogram.name || 'Pictogramme';
       img.width = 32;
       img.height = 32;
@@ -346,8 +387,9 @@ function MapEditor() {
                 name: editedPOIData.name,
                 description: editedPOIData.description
               },
-              pictogram: selectedPictogram.id,
-              pictogramFile: selectedPictogram.file,
+              pictogramId: selectedPictogram.id,
+              pictogramFile: selectedPictogram.publicUrl || selectedPictogram.file,
+              pictogramName: selectedPictogram.name,
               marker: marker
             };
           }
@@ -377,8 +419,9 @@ function MapEditor() {
                 name: editedPOIData.name,
                 description: editedPOIData.description
               },
-              pictogram: null,
+              pictogramId: null,
               pictogramFile: null,
+              pictogramName: null,
               marker: null
             };
           }
@@ -403,8 +446,19 @@ function MapEditor() {
       return;
     }
     
+    // Validation et normalisation du pictogramme sélectionné
+    const normalizedPictogram = {
+      id: pictogram.id,
+      name: pictogram.name,
+      publicUrl: pictogram.publicUrl,
+      file: pictogram.file || pictogram.filePath,
+      ...pictogram
+    };
+    
+    console.log('Pictogramme sélectionné:', normalizedPictogram);
+    
     // Seulement sélectionner le pictogramme, ne pas l'appliquer immédiatement
-    setSelectedPictogram(pictogram);
+    setSelectedPictogram(normalizedPictogram);
     
     // Fermer le menu des pictogrammes mais garder le formulaire d'édition ouvert
     setShowPictoMenu(false);
@@ -743,7 +797,7 @@ function MapEditor() {
         name: poi.name,
         description: poi.properties?.description || '',
         coordinates: poi.coordinates,
-        pictogram: poi.pictogram || null,
+        pictogram: poi.pictogramId || null,
         pictogramFile: poi.pictogramFile || null,
         properties: poi.properties || {},
         sourceFile: poi.sourceFile
@@ -794,16 +848,27 @@ function MapEditor() {
     }
   };
 
-  // useEffect pour charger les pictogrammes depuis le JSON
+  // useEffect pour charger les pictogrammes depuis l'API backend
   useEffect(() => {
-    fetch('/pictograms.json')
-      .then(response => response.json())
-      .then(data => {
-        setAvailablePictograms(data.pictograms);
-      })
-      .catch(error => {
+    const loadPictograms = async () => {
+      try {
+        console.log('Chargement des pictogrammes depuis l\'API...');
+        const response = await apiService.get('/api/pictograms');
+        if (response.ok) {
+          const pictograms = await response.json();
+          console.log('Pictogrammes chargés:', pictograms);
+          setAvailablePictograms(pictograms);
+        } else {
+          console.error('Erreur HTTP lors du chargement des pictogrammes:', response.status);
+          setAvailablePictograms([]);
+        }
+      } catch (error) {
         console.error('Erreur lors du chargement des pictogrammes:', error);
-      });
+        setAvailablePictograms([]);
+      }
+    };
+
+    loadPictograms();
   }, []);
 
   // Effet pour initialiser la carte
@@ -1120,7 +1185,7 @@ function MapEditor() {
                     >
                       {(selectedPictogram?.file || currentEditingPOI.pictogramFile) ? (
                         <img 
-                          src={`/pictogrammes/${selectedPictogram?.file || currentEditingPOI.pictogramFile}`} 
+                          src={getPictogramUrl(selectedPictogram || { file: currentEditingPOI.pictogramFile })} 
                           alt="Pictogramme" 
                         />
                       ) : (
@@ -1165,8 +1230,13 @@ function MapEditor() {
                     title={pictogram.name}
                   >
                     <img 
-                      src={`/pictogrammes/${pictogram.file}`} 
+                      src={getPictogramUrl(pictogram)} 
                       alt={pictogram.name} 
+                      onError={(e) => {
+                        // Fallback en cas d'erreur d'image
+                        console.warn('Erreur de chargement pour:', pictogram.name);
+                        e.target.style.display = 'none';
+                      }}
                     />
                     <div className="pictogram-name">{pictogram.name}</div>
                   </div>
