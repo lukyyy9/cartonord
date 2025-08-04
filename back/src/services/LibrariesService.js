@@ -1,4 +1,5 @@
 const { Library, Pictogram, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 class LibrariesService {
   /**
@@ -74,7 +75,7 @@ class LibrariesService {
       const existingLibrary = await Library.findOne({ 
         where: { 
           name,
-          id: { [sequelize.Op.ne]: id }
+          id: { [Op.ne]: id }
         }
       });
       if (existingLibrary) {
