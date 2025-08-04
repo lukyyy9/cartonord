@@ -21,6 +21,10 @@ const AdminHomepage = () => {
   const [libraryFormData, setLibraryFormData] = useState({
     name: ''
   });
+  const [showAddPictogramModal, setShowAddPictogramModal] = useState(false);
+  const [pictogramFiles, setPictogramFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +38,25 @@ const AdminHomepage = () => {
         throw new Error('Erreur lors du chargement des bibliothèques');
       }
       const librariesData = await response.json();
-      setLibraries(librariesData);
+      
+      // Récupérer les pictogrammes pour chaque bibliothèque
+      const librariesWithPictograms = await Promise.all(
+        librariesData.map(async (library) => {
+          try {
+            const pictogramsResponse = await apiService.get(`/api/libraries/${library.id}/pictograms`);
+            if (pictogramsResponse.ok) {
+              const pictograms = await pictogramsResponse.json();
+              return { ...library, pictograms };
+            }
+            return { ...library, pictograms: [] };
+          } catch (err) {
+            console.error(`Erreur lors du chargement des pictogrammes pour la bibliothèque ${library.id}:`, err);
+            return { ...library, pictograms: [] };
+          }
+        })
+      );
+      
+      setLibraries(librariesWithPictograms);
     } catch (err) {
       console.error('Erreur lors du chargement des bibliothèques:', err);
     }
@@ -325,6 +347,103 @@ const AdminHomepage = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Gestion des pictogrammes
+  const handleFileSelect = (event) => {
+    const files = Array.from(event.target.files);
+    const imageFiles = files.filter(file => 
+      file.type.startsWith('image/') && 
+      ['image/png', 'image/jpg', 'image/jpeg', 'image/svg+xml', 'image/gif'].includes(file.type)
+    );
+    
+    if (imageFiles.length !== files.length) {
+      alert('Seuls les fichiers image (PNG, JPG, JPEG, SVG, GIF) sont autorisés.');
+    }
+    
+    setPictogramFiles(imageFiles);
+  };
+
+  const handleUploadPictograms = async () => {
+    if (!pictogramFiles.length || !selectedLibrary) {
+      alert('Veuillez sélectionner des fichiers et une bibliothèque.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const pictogramsData = [];
+      
+      // Préparer les données pour chaque pictogramme
+      for (let i = 0; i < pictogramFiles.length; i++) {
+        const file = pictogramFiles[i];
+        const fileName = file.name;
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+        
+        // Pour cette implémentation, nous simulons l'upload des fichiers
+        // Dans un vrai système, il faudrait d'abord uploader les fichiers vers un serveur de fichiers
+        const publicUrl = `/pictogrammes/${fileName}`;
+        
+        pictogramsData.push({
+          name: nameWithoutExt,
+          category: null, // Sera demandé dans une future version
+          filePath: `/pictogrammes/${fileName}`,
+          publicUrl: publicUrl,
+          libraryId: selectedLibrary.id,
+          metadata: {
+            originalFileName: fileName,
+            fileSize: file.size,
+            fileType: file.type
+          }
+        });
+      }
+
+      // Envoyer les pictogrammes à l'API
+      const response = await apiService.post('/api/pictograms', pictogramsData);
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création des pictogrammes');
+      }
+
+      const result = await response.json();
+      
+      // Rafraîchir la bibliothèque sélectionnée
+      const libraryResponse = await apiService.get(`/api/libraries/${selectedLibrary.id}/pictograms`);
+      let updatedPictograms = [];
+      if (libraryResponse.ok) {
+        updatedPictograms = await libraryResponse.json();
+        setSelectedLibrary(prev => ({
+          ...prev,
+          pictograms: updatedPictograms
+        }));
+      }
+
+      // Mettre à jour les libraries dans la liste
+      setLibraries(prev => prev.map(lib => 
+        lib.id === selectedLibrary.id 
+          ? { ...lib, pictograms: updatedPictograms }
+          : lib
+      ));
+
+      alert(`${result.created || pictogramsData.length} pictogrammes ajoutés avec succès !`);
+      setShowAddPictogramModal(false);
+      setPictogramFiles([]);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      alert('Erreur lors de l\'ajout des pictogrammes : ' + error.message);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleCloseAddPictogramModal = () => {
+    setShowAddPictogramModal(false);
+    setPictogramFiles([]);
+    setUploadProgress(0);
   };
 
   // Charger les bibliothèques quand l'onglet pictogrammes est activé
@@ -726,7 +845,15 @@ const AdminHomepage = () => {
                 </div>
 
                 <div className="detail-section">
-                  <h3>Pictogrammes ({selectedLibrary.pictograms?.length || 0})</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>Pictogrammes ({selectedLibrary.pictograms?.length || 0})</h3>
+                    <button
+                      className="create-map-btn"
+                      onClick={() => setShowAddPictogramModal(true)}
+                    >
+                      + Nouveaux
+                    </button>
+                  </div>
                   {selectedLibrary.pictograms && selectedLibrary.pictograms.length > 0 ? (
                     <div className="pictograms-grid">
                       {selectedLibrary.pictograms.map((pictogram) => (
@@ -888,6 +1015,110 @@ const AdminHomepage = () => {
                 disabled={!libraryFormData.name.trim()}
               >
                 Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'ajout de pictogrammes */}
+      {showAddPictogramModal && (
+        <div className="edit-modal-overlay">
+          <div className="edit-modal" style={{ maxWidth: '600px' }}>
+            <div className="edit-modal-header">
+              <h3>Ajouter des pictogrammes à {selectedLibrary?.name}</h3>
+              <button className="close-modal-btn" onClick={handleCloseAddPictogramModal}>×</button>
+            </div>
+            
+            <div className="edit-modal-body">
+              <div className="form-group">
+                <label htmlFor="pictogram-files">Sélectionner des fichiers images *</label>
+                <input
+                  type="file"
+                  id="pictogram-files"
+                  multiple
+                  accept="image/png,image/jpg,image/jpeg,image/svg+xml,image/gif"
+                  onChange={handleFileSelect}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: '#444',
+                    border: '1px solid #555',
+                    borderRadius: '4px',
+                    color: 'white'
+                  }}
+                />
+                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '5px' }}>
+                  Formats supportés : PNG, JPG, JPEG, SVG, GIF
+                </div>
+              </div>
+
+              {pictogramFiles.length > 0 && (
+                <div className="form-group">
+                  <label>Fichiers sélectionnés ({pictogramFiles.length})</label>
+                  <div style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto', 
+                    background: '#333', 
+                    border: '1px solid #555', 
+                    borderRadius: '4px',
+                    padding: '10px'
+                  }}>
+                    {pictogramFiles.map((file, index) => (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '5px 0',
+                        borderBottom: index < pictogramFiles.length - 1 ? '1px solid #444' : 'none'
+                      }}>
+                        <span style={{ fontSize: '14px', color: '#ddd' }}>
+                          {file.name}
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#aaa' }}>
+                          {(file.size / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isUploading && (
+                <div className="form-group">
+                  <label>Progression</label>
+                  <div style={{
+                    width: '100%',
+                    height: '20px',
+                    background: '#333',
+                    borderRadius: '10px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${uploadProgress}%`,
+                      height: '100%',
+                      background: '#4caf50',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="edit-modal-footer">
+              <button 
+                className="cancel-btn" 
+                onClick={handleCloseAddPictogramModal}
+                disabled={isUploading}
+              >
+                Annuler
+              </button>
+              <button 
+                className="save-btn" 
+                onClick={handleUploadPictograms}
+                disabled={pictogramFiles.length === 0 || isUploading}
+              >
+                {isUploading ? 'Upload en cours...' : `Ajouter ${pictogramFiles.length} pictogramme(s)`}
               </button>
             </div>
           </div>
