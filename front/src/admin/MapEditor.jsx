@@ -165,6 +165,35 @@ function MapEditor() {
         });
         
         setPointsOfInterest(poisWithMarkers);
+        
+        // Masquer les points qui ont des pictogrammes
+        setTimeout(() => {
+          poisWithMarkers.forEach(poi => {
+            if (poi.pictogramFile && poi.sourceFile) {
+              // Trouver la source correspondante dans la carte
+              const sources = map.current.getStyle().sources;
+              Object.keys(sources).forEach(sourceId => {
+                const source = map.current.getSource(sourceId);
+                if (source && source._data && source._data.features) {
+                  // Filtrer les features pour exclure ce point spécifique
+                  const geojsonData = { ...source._data };
+                  geojsonData.features = geojsonData.features.filter(feature => {
+                    if (feature.geometry.type === 'Point') {
+                      const isSamePoint = 
+                        Math.abs(feature.geometry.coordinates[0] - poi.coordinates[0]) < 0.00001 &&
+                        Math.abs(feature.geometry.coordinates[1] - poi.coordinates[1]) < 0.00001;
+                      return !isSamePoint; // Exclure ce point
+                    }
+                    return true; // Garder tous les autres types de géométrie
+                  });
+                  
+                  // Mettre à jour la source avec les nouvelles données
+                  source.setData(geojsonData);
+                }
+              });
+            }
+          });
+        }, 100);
       }
 
       // Ajuster la vue de la carte selon la configuration
@@ -235,6 +264,27 @@ function MapEditor() {
       // Si le point a déjà un marker sur la carte, le supprimer
       if (currentEditingPOI.marker) {
         currentEditingPOI.marker.remove();
+      }
+      
+      // Masquer le point original en modifiant la source GeoJSON
+      if (currentEditingPOI.sourceId) {
+        const source = map.current.getSource(currentEditingPOI.sourceId);
+        if (source && source._data) {
+          const geojsonData = { ...source._data };
+          // Filtrer les features pour exclure ce point spécifique
+          geojsonData.features = geojsonData.features.filter(feature => {
+            if (feature.geometry.type === 'Point') {
+              const isSamePoint = 
+                Math.abs(feature.geometry.coordinates[0] - currentEditingPOI.coordinates[0]) < 0.00001 &&
+                Math.abs(feature.geometry.coordinates[1] - currentEditingPOI.coordinates[1]) < 0.00001;
+              return !isSamePoint; // Exclure ce point
+            }
+            return true; // Garder tous les autres types de géométrie
+          });
+          
+          // Mettre à jour la source avec les nouvelles données
+          source.setData(geojsonData);
+        }
       }
       
       // Créer un élément DOM pour le marqueur
