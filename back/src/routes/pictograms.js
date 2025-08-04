@@ -1,22 +1,37 @@
 const express = require('express');
-const { Pictogram } = require('../models');
+const PictogramsService = require('../services/PictogramsService');
 const router = express.Router();
+
+// GET /api/pictograms/categories - Récupérer toutes les catégories de pictogrammes
+router.get('/categories', async (req, res) => {
+  try {
+    const { libraryId } = req.query;
+    
+    const categories = await PictogramsService.getCategories(libraryId);
+    res.json(categories);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des catégories:', error);
+    res.status(500).json({ 
+      error: 'Erreur lors de la récupération des catégories',
+      message: error.message 
+    });
+  }
+});
 
 // GET /api/pictograms - Lister tous les pictogrammes
 router.get('/', async (req, res) => {
   try {
-    const { category } = req.query;
+    const { category, libraryId } = req.query;
     
-    const whereClause = {};
+    const filters = {};
     if (category) {
-      whereClause.category = category;
+      filters.category = category;
+    }
+    if (libraryId) {
+      filters.libraryId = libraryId;
     }
 
-    const pictograms = await Pictogram.findAll({
-      where: whereClause,
-      order: [['category', 'ASC'], ['name', 'ASC']]
-    });
-
+    const pictograms = await PictogramsService.getAllPictograms(filters);
     res.json(pictograms);
   } catch (error) {
     console.error('Erreur lors de la récupération des pictogrammes:', error);
@@ -32,7 +47,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const pictogram = await Pictogram.findByPk(id);
+    const pictogram = await PictogramsService.getPictogramById(id);
 
     if (!pictogram) {
       return res.status(404).json({ error: 'Pictogramme non trouvé' });
@@ -51,29 +66,22 @@ router.get('/:id', async (req, res) => {
 // POST /api/pictograms - Créer un nouveau pictogramme
 router.post('/', async (req, res) => {
   try {
-    const { name, category, filePath, publicUrl, svgData, metadata } = req.body;
+    const { name, category, filePath, publicUrl, libraryId, svgData, metadata } = req.body;
 
-    if (!name || !filePath || !publicUrl) {
+    if (!name || !filePath || !publicUrl || !libraryId) {
       return res.status(400).json({ 
-        error: 'Le nom, le chemin du fichier et l\'URL publique sont requis' 
+        error: 'Le nom, le chemin du fichier, l\'URL publique et l\'ID de la librairie sont requis' 
       });
     }
 
-    // Vérifier si un pictogramme avec ce nom existe déjà
-    const existingPictogram = await Pictogram.findOne({ where: { name } });
-    if (existingPictogram) {
-      return res.status(400).json({ 
-        error: 'Un pictogramme avec ce nom existe déjà' 
-      });
-    }
-
-    const pictogram = await Pictogram.create({
+    const pictogram = await PictogramsService.createPictogram({
       name,
-      category: category || 'general',
+      category,
       filePath,
       publicUrl,
+      libraryId,
       svgData,
-      metadata: metadata || {}
+      metadata
     });
 
     res.status(201).json(pictogram);
@@ -90,38 +98,37 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, filePath, publicUrl, svgData, metadata } = req.body;
+    const { name, category, filePath, publicUrl, libraryId, svgData, metadata } = req.body;
 
-    const pictogram = await Pictogram.findByPk(id);
-    if (!pictogram) {
-      return res.status(404).json({ error: 'Pictogramme non trouvé' });
-    }
-
-    // Vérifier si un autre pictogramme avec ce nom existe déjà
-    if (name && name !== pictogram.name) {
-      const existingPictogram = await Pictogram.findOne({ 
-        where: { name },
-        exclude: { id }
-      });
-      if (existingPictogram) {
-        return res.status(400).json({ 
-          error: 'Un pictogramme avec ce nom existe déjà' 
-        });
-      }
-    }
-
-    await pictogram.update({
-      ...(name && { name }),
-      ...(category && { category }),
-      ...(filePath && { filePath }),
-      ...(publicUrl && { publicUrl }),
-      ...(svgData !== undefined && { svgData }),
-      ...(metadata && { metadata })
+    const pictogram = await PictogramsService.updatePictogram(id, {
+      name,
+      category,
+      filePath,
+      publicUrl,
+      libraryId,
+      svgData,
+      metadata
     });
 
     res.json(pictogram);
   } catch (error) {
     console.error('Erreur lors de la mise à jour du pictogramme:', error);
+    
+    // Gestion des erreurs spécifiques
+    if (error.message.includes('non trouvé')) {
+      return res.status(404).json({ 
+        error: 'Pictogramme non trouvé',
+        message: error.message 
+      });
+    }
+    
+    if (error.message.includes('existe déjà') || error.message.includes('n\'existe pas')) {
+      return res.status(400).json({ 
+        error: 'Erreur de validation',
+        message: error.message 
+      });
+    }
+
     res.status(500).json({ 
       error: 'Erreur lors de la mise à jour du pictogramme',
       message: error.message 
@@ -134,38 +141,20 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const pictogram = await Pictogram.findByPk(id);
-    if (!pictogram) {
-      return res.status(404).json({ error: 'Pictogramme non trouvé' });
-    }
-
-    await pictogram.destroy();
-
+    await PictogramsService.deletePictogram(id);
     res.json({ message: 'Pictogramme supprimé avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression du pictogramme:', error);
+    
+    if (error.message.includes('non trouvé')) {
+      return res.status(404).json({ 
+        error: 'Pictogramme non trouvé',
+        message: error.message 
+      });
+    }
+
     res.status(500).json({ 
       error: 'Erreur lors de la suppression du pictogramme',
-      message: error.message 
-    });
-  }
-});
-
-// GET /api/pictograms/categories - Récupérer toutes les catégories de pictogrammes
-router.get('/categories', async (req, res) => {
-  try {
-    const categories = await Pictogram.findAll({
-      attributes: ['category'],
-      group: ['category'],
-      order: [['category', 'ASC']]
-    });
-
-    const categoryList = categories.map(item => item.category);
-    res.json(categoryList);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des catégories:', error);
-    res.status(500).json({ 
-      error: 'Erreur lors de la récupération des catégories',
       message: error.message 
     });
   }

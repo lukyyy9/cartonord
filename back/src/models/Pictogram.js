@@ -37,6 +37,15 @@ module.exports = (sequelize) => {
       type: DataTypes.JSONB,
       allowNull: true,
       defaultValue: {}
+    },
+    // Clé étrangère vers la librairie
+    libraryId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'libraries',
+        key: 'id'
+      }
     }
   }, {
     tableName: 'pictograms',

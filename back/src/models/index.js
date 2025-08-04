@@ -13,6 +13,7 @@ const Map = require('./Map')(sequelize);
 const Layer = require('./Layer')(sequelize);
 const PointOfInterest = require('./PointOfInterest')(sequelize);
 const Pictogram = require('./Pictogram')(sequelize);
+const Library = require('./Library')(sequelize);
 const Admin = require('./Admin')(sequelize);
 
 // Définition des associations
@@ -47,11 +48,24 @@ PointOfInterest.belongsTo(Layer, {
     as: 'layer'
 });
 
+// Relations entre Library et Pictogram
+Library.hasMany(Pictogram, {
+    foreignKey: 'libraryId',
+    as: 'pictograms',
+    onDelete: 'CASCADE' // Les pictogrammes sont supprimés si la librairie est supprimée
+});
+
+Pictogram.belongsTo(Library, {
+    foreignKey: 'libraryId',
+    as: 'library'
+});
+
 module.exports = {
     sequelize,
     Map,
     Layer,
     PointOfInterest,
     Pictogram,
+    Library,
     Admin
 };

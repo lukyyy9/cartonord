@@ -5,6 +5,7 @@ require('dotenv').config();
 const healthRoutes = require('./routes/health');
 const mapRoutes = require('./routes/maps');
 const pictogramsRoutes = require('./routes/pictograms');
+const librariesRoutes = require('./routes/libraries');
 const authRoutes = require('./routes/auth');
 const publicRoutes = require('./routes/public');
 const authMiddleware = require('./middlewares/auth');
@@ -27,6 +28,7 @@ app.use('/', publicRoutes);
 // Routes protégées
 app.use('/api/maps', authMiddleware, mapRoutes);
 app.use('/api/pictograms', authMiddleware, pictogramsRoutes);
+app.use('/api/libraries', librariesRoutes);
 
 // Fonction pour créer l'admin par défaut
 const createDefaultAdmin = async () => {
