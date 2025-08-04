@@ -241,7 +241,7 @@
 }
 
 .edit-btn {
-  background-color: #ebc000;
+  background-color: #005eeb;
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -254,13 +254,13 @@
 }
 
 .edit-btn:hover {
-  background-color: #bb9f00;
+  background-color: #0052cd;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .delete-btn {
-  background-color: #f44336;
+  background-color: #dc3545;
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -273,7 +273,7 @@
 }
 
 .delete-btn:hover {
-  background-color: #c20000;
+  background-color: #c82333;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -459,7 +459,7 @@
 
 /* Bouton modifier informations */
 .edit-info-btn {
-  background: #17a2b8;
+  background: #2196f3;
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
@@ -472,7 +472,7 @@
 }
 
 .edit-info-btn:hover {
-  background: #138496;
+  background: #1976d2;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
