@@ -6,7 +6,7 @@
   background: rgba(36, 36, 36);
   padding: 10px;
   z-index: 1;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 81px);
   overflow-y: auto;
   width: 400px;
   border-top: 1px solid #4d4d4d;

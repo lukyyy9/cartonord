@@ -35,6 +35,14 @@ function MapEditor() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPictogram, setSelectedPictogram] = useState(null);
   
+  // États pour les paramètres de configuration de la carte
+  const [mapConfig, setMapConfig] = useState({
+    zoom: 15,
+    center: [0, 0],
+    maxZoom: 18,
+    minZoom: 0
+  });
+  
   // Ajoutez un compteur pour garantir l'unicité
   let idCounter = 0;
   
@@ -74,6 +82,32 @@ function MapEditor() {
     const timestamp = new Date().getTime();
     const cleanFileName = fileName.replace(/\s+/g, '-').replace(/\.[^/.]+$/, "");
     return `${baseName}-${cleanFileName}-${timestamp}-${idCounter++}`;
+  };
+
+  // Fonctions pour gérer la configuration de la carte
+  const getCurrentMapZoom = () => {
+    if (map.current) {
+      setMapConfig(prev => ({ ...prev, zoom: map.current.getZoom() }));
+    }
+  };
+
+  const getCurrentMapCenter = () => {
+    if (map.current) {
+      const center = map.current.getCenter().toArray();
+      setMapConfig(prev => ({ ...prev, center }));
+    }
+  };
+
+  const getCurrentMapMaxZoom = () => {
+    if (map.current) {
+      setMapConfig(prev => ({ ...prev, maxZoom: map.current.getMaxZoom() || 18 }));
+    }
+  };
+
+  const getCurrentMapMinZoom = () => {
+    if (map.current) {
+      setMapConfig(prev => ({ ...prev, minZoom: map.current.getMinZoom() || 0 }));
+    }
   };
 
   // Fonction pour charger une carte existante
@@ -207,6 +241,14 @@ function MapEditor() {
         if (mapData.config.zoom) {
           map.current.setZoom(mapData.config.zoom);
         }
+        
+        // Mettre à jour l'état mapConfig avec les valeurs chargées
+        setMapConfig({
+          zoom: mapData.config.zoom || 15,
+          center: mapData.config.center || [0, 0],
+          maxZoom: mapData.config.maxZoom || 18,
+          minZoom: mapData.config.minZoom || 0
+        });
       }
 
     } catch (error) {
@@ -688,6 +730,15 @@ function MapEditor() {
   const handleSave = async () => {
     console.log('Sauvegarde en cours...');
     
+    // Validation des champs de configuration obligatoires
+    if (!mapConfig.zoom || !mapConfig.center || mapConfig.center.length !== 2 || 
+        mapConfig.maxZoom === undefined || mapConfig.minZoom === undefined ||
+        isNaN(mapConfig.zoom) || isNaN(mapConfig.center[0]) || isNaN(mapConfig.center[1]) ||
+        isNaN(mapConfig.maxZoom) || isNaN(mapConfig.minZoom)) {
+      console.error('Erreur: Tous les champs de configuration de la carte sont obligatoires et doivent être des nombres valides', mapConfig);
+      return;
+    }
+    
     try {
       // Récupérer les données GeoJSON de chaque couche depuis la carte
       const layersData = await Promise.all(
@@ -723,10 +774,10 @@ function MapEditor() {
   
       const payload = {
         config: {
-          center: map.current.getCenter().toArray(),
-          zoom: map.current.getZoom(),
-          minZoom: 0,
-          maxZoom: 18
+          center: mapConfig.center,
+          zoom: mapConfig.zoom,
+          minZoom: mapConfig.minZoom,
+          maxZoom: mapConfig.maxZoom
         },
         status: 'draft',
         layers: layersData,
@@ -811,7 +862,17 @@ function MapEditor() {
     
     // Ajouter les contrôles de navigation
     map.current.addControl(new maplibregl.NavigationControl());
-  }, []);
+    
+    // Initialiser la configuration par défaut si aucune carte n'est chargée
+    if (!mapId) {
+      setMapConfig({
+        zoom: 15,
+        center: [7.048, 43.667],
+        maxZoom: 18,
+        minZoom: 0
+      });
+    }
+  }, [mapId]);
 
   // Effet pour configurer le monitoring du drag-and-drop
   useEffect(() => {
@@ -1058,6 +1119,78 @@ function MapEditor() {
           </div>
           <div className={`tab-content ${activeTab === 'save' ? 'active' : ''}`}>
             <div className="save-section">
+              <h3>Configuration de la carte</h3>
+              
+              <div className="form-group">
+                <label>Zoom initial</label>
+                <div className="input-with-get">
+                  <input 
+                    type="number" 
+                    value={mapConfig.zoom} 
+                    onChange={(e) => setMapConfig(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
+                    step="0.1"
+                    min="0"
+                    max="24"
+                  />
+                  <button type="button" onClick={getCurrentMapZoom} className="get-btn">GET</button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Centre (longitude, latitude)</label>
+                <div className="center-inputs">
+                  <input 
+                    type="number" 
+                    value={mapConfig.center[0]} 
+                    onChange={(e) => setMapConfig(prev => ({ 
+                      ...prev, 
+                      center: [parseFloat(e.target.value), prev.center[1]] 
+                    }))}
+                    step="any"
+                    placeholder="Longitude"
+                  />
+                  <input 
+                    type="number" 
+                    value={mapConfig.center[1]} 
+                    onChange={(e) => setMapConfig(prev => ({ 
+                      ...prev, 
+                      center: [prev.center[0], parseFloat(e.target.value)] 
+                    }))}
+                    step="any"
+                    placeholder="Latitude"
+                  />
+                  <button type="button" onClick={getCurrentMapCenter} className="get-btn">GET</button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Zoom maximum</label>
+                <div className="input-with-get">
+                  <input 
+                    type="number" 
+                    value={mapConfig.maxZoom} 
+                    onChange={(e) => setMapConfig(prev => ({ ...prev, maxZoom: parseInt(e.target.value) }))}
+                    min="0"
+                    max="24"
+                  />
+                  <button type="button" onClick={getCurrentMapMaxZoom} className="get-btn">GET</button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Zoom minimum</label>
+                <div className="input-with-get">
+                  <input 
+                    type="number" 
+                    value={mapConfig.minZoom} 
+                    onChange={(e) => setMapConfig(prev => ({ ...prev, minZoom: parseInt(e.target.value) }))}
+                    min="0"
+                    max="24"
+                  />
+                  <button type="button" onClick={getCurrentMapMinZoom} className="get-btn">GET</button>
+                </div>
+              </div>
+
               <button 
                 className="save-main-btn" 
                 onClick={handleSave}

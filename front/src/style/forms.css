@@ -130,3 +130,52 @@
 .edit-content {
   padding: 20px;
 }
+
+/* Styles pour l'onglet de sauvegarde */
+.save-section h3 {
+  color: #ddd;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.input-with-get {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-with-get input {
+  flex: 1;
+}
+
+.get-btn {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.get-btn:hover {
+  background-color: #005999;
+}
+
+.center-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.center-inputs input {
+  flex: 1;
+}
+
+.save-main-btn {
+  margin-top: 20px;
+}
