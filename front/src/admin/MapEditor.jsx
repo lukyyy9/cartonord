@@ -436,7 +436,7 @@ function MapEditor() {
   // Fonction pour fermer le menu des pictogrammes
   const closePictoMenu = () => {
     setShowPictoMenu(false);
-    setCurrentEditingPOI(null);
+    // Ne pas mettre currentEditingPOI à null car le formulaire d'édition doit rester ouvert
   };
 
   // Fonction pour gérer la sélection d'un pictogramme
@@ -1156,7 +1156,6 @@ function MapEditor() {
             <div className="edit-form">
               <div className="edit-header">
                 <h3>Éditer le point d'intérêt</h3>
-                <button className="close-edit-form" onClick={closeEditForm}>x</button>
               </div>
               <div className="edit-content">
                 <div className="form-group">
@@ -1183,16 +1182,16 @@ function MapEditor() {
                       onClick={openPictogramMenu}
                       title="Cliquez pour changer de pictogramme"
                     >
-                      {(selectedPictogram?.file || currentEditingPOI.pictogramFile) ? (
+                      {(selectedPictogram?.file || currentEditingPOI?.pictogramFile) ? (
                         <img 
-                          src={getPictogramUrl(selectedPictogram || { file: currentEditingPOI.pictogramFile })} 
+                          src={getPictogramUrl(selectedPictogram || { file: currentEditingPOI?.pictogramFile })} 
                           alt="Pictogramme" 
                         />
                       ) : (
                         <div className="no-pictogram">Aucun</div>
                       )}
                     </div>
-                    {(selectedPictogram?.file || currentEditingPOI.pictogramFile) && (
+                    {(selectedPictogram?.file || currentEditingPOI?.pictogramFile) && (
                       <button 
                         type="button"
                         className="remove-pictogram-btn"
