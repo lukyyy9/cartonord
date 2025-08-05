@@ -125,20 +125,8 @@ function MapViewer() {
             'line-width': 2,
             'line-opacity': ['get', 'opacity']
           }
-        },
-        // Couches pour les points
-        {
-          id: 'point',
-          type: 'circle',
-          source: 'cartonord-tiles',
-          'source-layer': `map-${mapData.id}`,
-          filter: ['==', '$type', 'Point'],
-          paint: {
-            'circle-color': ['get', 'color'],
-            'circle-radius': 5,
-            'circle-opacity': ['get', 'opacity']
-          }
         }
+        // Suppression de la couche des points par défaut - seuls les pictogrammes seront affichés
       ]
     };
 
@@ -255,11 +243,11 @@ function MapViewer() {
     });
 
     // Changer le curseur au survol des features
-    map.current.on('mouseenter', ['polygon-fill', 'line', 'point'], () => {
+    map.current.on('mouseenter', ['polygon-fill', 'line'], () => {
       map.current.getCanvas().style.cursor = 'pointer';
     });
 
-    map.current.on('mouseleave', ['polygon-fill', 'line', 'point'], () => {
+    map.current.on('mouseleave', ['polygon-fill', 'line'], () => {
       map.current.getCanvas().style.cursor = '';
     });
 
