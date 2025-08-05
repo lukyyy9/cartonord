@@ -100,13 +100,13 @@ function MapEditor() {
 
   const getCurrentMapMaxZoom = () => {
     if (map.current) {
-      setMapConfig(prev => ({ ...prev, maxZoom: map.current.getMaxZoom() || 18 }));
+      setMapConfig(prev => ({ ...prev, maxZoom: map.current.getZoom() || 18 }));
     }
   };
 
   const getCurrentMapMinZoom = () => {
     if (map.current) {
-      setMapConfig(prev => ({ ...prev, minZoom: map.current.getMinZoom() || 0 }));
+      setMapConfig(prev => ({ ...prev, minZoom: map.current.getZoom() || 0 }));
     }
   };
 
@@ -1178,7 +1178,7 @@ function MapEditor() {
               </div>
 
               <div className="form-group">
-                <label>Zoom minimum</label>
+                <label>Dezoom maximum</label>
                 <div className="input-with-get">
                   <input 
                     type="number" 
