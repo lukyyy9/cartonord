@@ -15,8 +15,8 @@ const storage = multer.diskStorage({
         return cb(new Error('ID de librairie requis'), null);
       }
 
-      // Créer le chemin de destination
-      const uploadPath = path.join(__dirname, '../../uploads/pictograms', libraryId.toString());
+      // Créer le chemin de destination dans le volume partagé
+      const uploadPath = path.join('/data/uploads/pictograms', libraryId.toString());
       
       // Créer le dossier s'il n'existe pas
       await fs.ensureDir(uploadPath);
