@@ -210,38 +210,6 @@ function MapViewer() {
     // Attendre que la carte soit complètement chargée avant d'ajouter les markers
     map.current.on('load', addPictogramMarkers);
 
-    // Gestionnaire d'événements pour afficher les propriétés des features au clic
-    map.current.on('click', (e) => {
-      const features = map.current.queryRenderedFeatures(e.point);
-      
-      if (features.length > 0) {
-        const feature = features[0];
-        
-        // Créer le contenu du popup
-        let popupContent = '<div class="popup-content">';
-        
-        if (feature.properties.name) {
-          popupContent += `<h3>${feature.properties.name}</h3>`;
-        }
-        
-        if (feature.properties.description) {
-          popupContent += `<p>${feature.properties.description}</p>`;
-        }
-        
-        if (feature.properties.layerName) {
-          popupContent += `<p><strong>Couche:</strong> ${feature.properties.layerName}</p>`;
-        }
-        
-        popupContent += '</div>';
-        
-        // Afficher le popup
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(popupContent)
-          .addTo(map.current);
-      }
-    });
-
     // Changer le curseur au survol des features
     map.current.on('mouseenter', ['polygon-fill', 'line'], () => {
       map.current.getCanvas().style.cursor = 'pointer';
