@@ -2,17 +2,49 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '../style/user.css';
 import { getMapBySlug } from '../services/publicApi';
 
 function MapViewer() {
   const { slug } = useParams();
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const pictogramMarkers = useRef([]);
   const [mapData, setMapData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   const TILE_SERVER_URL = 'http://localhost:3003';
+
+  // Fonction utilitaire pour obtenir l'URL correcte d'un pictogramme
+  const getPictogramUrl = (pictogram) => {
+    if (!pictogram) return null;
+    
+    // Si c'est un objet pictogramme complet du backend avec publicUrl
+    if (pictogram.publicUrl) {
+      return `http://localhost:3001${pictogram.publicUrl}`;
+    }
+    
+    // Si c'est un objet avec file ou filePath
+    const file = pictogram.file || pictogram.filePath || pictogram.pictogramFile;
+    if (file) {
+      // Si l'URL commence déjà par /api/, ajouter le host
+      if (file.startsWith('/api/')) {
+        return `http://localhost:3001${file}`;
+      }
+      return `http://localhost:3001/api/uploads/pictograms/${file}`;
+    }
+    
+    // Si c'est juste un nom de fichier (string)
+    if (typeof pictogram === 'string') {
+      if (pictogram.startsWith('/api/')) {
+        return `http://localhost:3001${pictogram}`;
+      }
+      return `http://localhost:3001/api/uploads/pictograms/${pictogram}`;
+    }
+    
+    return null;
+  };
 
   // Récupérer les données de la carte via le slug
   useEffect(() => {
@@ -124,6 +156,72 @@ function MapViewer() {
     // Ajouter les contrôles de navigation
     map.current.addControl(new maplibregl.NavigationControl());
 
+    // Ajouter les pictogrammes comme markers
+    const addPictogramMarkers = () => {
+      // Supprimer les markers existants
+      pictogramMarkers.current.forEach(marker => marker.remove());
+      
+      const newMarkers = [];
+      
+      if (mapData.pointsOfInterest && mapData.pointsOfInterest.length > 0) {
+        mapData.pointsOfInterest.forEach(poi => {
+          // Vérifier si le POI a un pictogramme
+          if (poi.pictogramFile && poi.coordinates) {
+            const el = document.createElement('div');
+            el.className = 'pictogram-marker';
+            el.style.cursor = 'pointer';
+            
+            const img = document.createElement('img');
+            img.src = getPictogramUrl(poi);
+            img.alt = poi.name || 'Point d\'intérêt';
+            img.style.width = '32px';
+            img.style.height = '32px';
+            img.style.display = 'block';
+            
+            // Gérer les erreurs de chargement d'image
+            img.onerror = () => {
+              console.warn('Erreur de chargement du pictogramme pour:', poi.name);
+              el.style.display = 'none';
+            };
+            
+            el.appendChild(img);
+            
+            const marker = new maplibregl.Marker({
+              element: el
+            })
+            .setLngLat(poi.coordinates)
+            .addTo(map.current);
+            
+            // Ajouter un popup au clic sur le marker
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              
+              let popupContent = '<div class="popup-content">';
+              if (poi.name) {
+                popupContent += `<h3>${poi.name}</h3>`;
+              }
+              if (poi.description) {
+                popupContent += `<p>${poi.description}</p>`;
+              }
+              popupContent += '</div>';
+              
+              new maplibregl.Popup()
+                .setLngLat(poi.coordinates)
+                .setHTML(popupContent)
+                .addTo(map.current);
+            });
+            
+            newMarkers.push(marker);
+          }
+        });
+      }
+      
+      pictogramMarkers.current = newMarkers;
+    };
+
+    // Attendre que la carte soit complètement chargée avant d'ajouter les markers
+    map.current.on('load', addPictogramMarkers);
+
     // Gestionnaire d'événements pour afficher les propriétés des features au clic
     map.current.on('click', (e) => {
       const features = map.current.queryRenderedFeatures(e.point);
@@ -166,6 +264,13 @@ function MapViewer() {
     });
 
   }, [mapData]);
+
+  // Effet pour nettoyer les markers lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      pictogramMarkers.current.forEach(marker => marker.remove());
+    };
+  }, []);
 
   // Affichage des états de chargement et d'erreur
   if (loading) {

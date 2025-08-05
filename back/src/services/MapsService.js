@@ -423,15 +423,30 @@ class MapsService {
         slug: slug,
         status: 'published'
       },
-      attributes: ['id', 'name', 'description', 'slug', 'config', 'tilesetId', 'status', 'created_at', 'updated_at']
+      attributes: ['id', 'name', 'description', 'slug', 'config', 'tilesetId', 'status', 'created_at', 'updated_at'],
+      include: [
+        {
+          model: PointOfInterest,
+          as: 'pointsOfInterest',
+          attributes: ['id', 'name', 'description', 'coordinates', 'pictogramId', 'pictogramFile', 'properties', 'sourceFile']
+        }
+      ]
     });
 
     if (!map) {
       return null;
     }
 
-    // Retourner uniquement les métadonnées essentielles
-    return map.toJSON();
+    // Transformer les coordonnées PostGIS en format GeoJSON pour les POI
+    const mapData = map.toJSON();
+    if (mapData.pointsOfInterest) {
+      mapData.pointsOfInterest = mapData.pointsOfInterest.map(poi => ({
+        ...poi,
+        coordinates: poi.coordinates.coordinates
+      }));
+    }
+
+    return mapData;
   }
 }
 

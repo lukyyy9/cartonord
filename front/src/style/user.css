@@ -20,3 +20,26 @@
 .popup-content p:last-child {
   margin-bottom: 0;
 }
+
+/* Styles pour les markers de pictogrammes */
+.pictogram-marker {
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.pictogram-marker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.pictogram-marker img {
+  border-radius: 50%;
+  object-fit: cover;
+}
