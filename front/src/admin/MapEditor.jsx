@@ -268,10 +268,10 @@ function MapEditor() {
 
   // Effet pour charger une carte existante si un mapId est fourni
   useEffect(() => {
-    if (mapId && map.current && !currentMap) {
+    if (mapId && !currentMap) {
       loadExistingMap(mapId);
     }
-  }, [mapId, currentMap]);
+  }, [mapId]);
 
   // Fonction pour gérer l'édition d'un point d'intérêt
   const handleEditPOI = (point) => {
