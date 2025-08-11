@@ -100,12 +100,6 @@ class LibrariesService {
       return null;
     }
 
-    // Mettre à jour les pictogrammes pour enlever la référence à cette librairie
-    await Pictogram.update(
-      { libraryId: null },
-      { where: { libraryId: id } }
-    );
-
     await library.destroy();
     return { message: 'Librairie supprimée avec succès' };
   }
