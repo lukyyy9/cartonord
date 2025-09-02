@@ -144,6 +144,14 @@ function MapViewer() {
     // Ajouter les contrôles de navigation
     map.current.addControl(new maplibregl.NavigationControl());
 
+    // Ajouter le contrôle de géolocalisation pour suivre l'utilisateur
+    map.current.addControl(new maplibregl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true
+    }));
+
     // Ajouter les pictogrammes comme markers
     const addPictogramMarkers = () => {
       // Supprimer les markers existants
