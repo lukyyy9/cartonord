@@ -86,7 +86,7 @@ function MapViewer() {
           id: 'background',
           type: 'background',
           paint: {
-            'background-color': '#242424'
+            'background-color': '#c8e4c4'
           }
         },
         // Couches pour les polygones
