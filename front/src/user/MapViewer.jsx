@@ -267,9 +267,8 @@ function MapViewer() {
 
   return (
     <div className="user-map-container">
-      <div className="map-header">
-        <h1>{mapData.name}</h1>
-        {mapData.description && <p>{mapData.description}</p>}
+      <div className="map-search">
+        <input type="text" placeholder="Search for a place or address" />
       </div>
       <div ref={mapContainer} className="user-map" />
     </div>

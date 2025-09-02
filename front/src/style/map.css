@@ -20,6 +20,7 @@
   position: relative;
 }
 
+/*
 .map-header {
   position: absolute;
   top: 20px;
@@ -43,6 +44,22 @@
   margin: 0;
   color: #666;
   font-size: 0.9em;
+}
+*/
+
+.map-search {
+  position: absolute;
+  top: 0px;
+  left: 10px;
+  z-index: 1000;
+}
+
+.map-search input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 300px;
+  max-width: 100%;
 }
 
 .user-map {
@@ -74,24 +91,6 @@
 
 .marker:hover {
   transform: scale(1.1);
-}
-
-/* Styles responsive pour la carte */
-@media (max-width: 768px) {
-  .map-header {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    padding: 10px 15px;
-  }
-  
-  .map-header h1 {
-    font-size: 1.3em;
-  }
-  
-  .map-header p {
-    font-size: 0.8em;
-  }
 }
 
 /* Animation d'apparition */
