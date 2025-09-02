@@ -152,6 +152,9 @@ function MapViewer() {
       trackUserLocation: true
     }), 'bottom-right');
 
+  // Ajouter le contrôle d'échelle (scale bar) en bas à droite
+  map.current.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
+
     // Ajouter les pictogrammes comme markers
     const addPictogramMarkers = () => {
       // Supprimer les markers existants
