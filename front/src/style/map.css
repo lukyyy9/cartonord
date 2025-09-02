@@ -49,7 +49,7 @@
 
 .map-search {
   position: absolute;
-  top: 0px;
+  top: 10px;
   left: 10px;
   z-index: 1000;
 }
