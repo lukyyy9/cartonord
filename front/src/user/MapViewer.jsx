@@ -141,16 +141,16 @@ function MapViewer() {
       zoom: zoom
     });
 
-    // Ajouter les contrôles de navigation
-    map.current.addControl(new maplibregl.NavigationControl());
+    // Ajouter les contrôles de navigation (position en bas à droite)
+    map.current.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
-    // Ajouter le contrôle de géolocalisation pour suivre l'utilisateur
+    // Ajouter le contrôle de géolocalisation pour suivre l'utilisateur (position en bas à droite)
     map.current.addControl(new maplibregl.GeolocateControl({
       positionOptions: {
         enableHighAccuracy: true
       },
       trackUserLocation: true
-    }));
+    }), 'bottom-right');
 
     // Ajouter les pictogrammes comme markers
     const addPictogramMarkers = () => {
