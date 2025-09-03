@@ -149,12 +149,18 @@ function MapEditor() {
         type: 'symbol',
         source: poiSourceId,
         layout: {
-          'text-field': ['get', 'name'],
+          // Masquer le texte si un pictogramme est présent, sinon afficher le nom
+          'text-field': ['case', 
+            ['!=', ['get', 'icon'], null], 
+            '', // Pas de texte si icon est présent
+            ['get', 'name'] // Afficher le nom si pas d'icône
+          ],
           'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
           'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
           'text-radial-offset': 0.5,
           'text-justify': 'auto',
           'text-size': 12,
+          // Toujours afficher l'icône si elle existe
           'icon-image': ['case', 
             ['!=', ['get', 'icon'], null], 
             ['get', 'icon'], 
