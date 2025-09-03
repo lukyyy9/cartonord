@@ -35,6 +35,11 @@ function MapEditor() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPictogram, setSelectedPictogram] = useState(null);
   
+  // Nouveau state pour gérer les sources et couches des POI
+  const [poiSourceId] = useState('poi-source');
+  const [poiLayerId] = useState('poi-labels');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  
   // États pour les paramètres de configuration de la carte
   const [mapConfig, setMapConfig] = useState({
     zoom: 15,
@@ -84,6 +89,84 @@ function MapEditor() {
     return `${baseName}-${cleanFileName}-${timestamp}-${idCounter++}`;
   };
 
+  // Fonction pour créer ou mettre à jour la source des POI
+  const updatePOISource = useCallback(() => {
+    if (!map.current || !mapLoaded) {
+      console.log('Carte pas prête pour updatePOISource', { mapCurrent: !!map.current, mapLoaded });
+      return;
+    }
+    
+    console.log('Mise à jour de la source POI avec', pointsOfInterest.length, 'points');
+    
+    // Créer un GeoJSON FeatureCollection à partir des POI
+    const poiGeojson = {
+      type: 'FeatureCollection',
+      features: pointsOfInterest.map(poi => ({
+        type: 'Feature',
+        id: poi.id,
+        geometry: {
+          type: 'Point',
+          coordinates: poi.coordinates
+        },
+        properties: {
+          name: poi.name || poi.properties?.name || 'Point sans nom',
+          description: poi.properties?.description || '',
+          icon: poi.pictogramId ? poi.pictogramId.toString() : null,
+          sourceFile: poi.sourceFile || null
+        }
+      }))
+    };
+    
+    console.log('GeoJSON POI créé:', poiGeojson);
+    
+    // Ajouter ou mettre à jour la source
+    if (map.current.getSource(poiSourceId)) {
+      console.log('Mise à jour de la source POI existante');
+      map.current.getSource(poiSourceId).setData(poiGeojson);
+    } else {
+      console.log('Création de la source POI et de la couche');
+      map.current.addSource(poiSourceId, {
+        type: 'geojson',
+        data: poiGeojson
+      });
+      
+      // Ajouter la couche symbol pour les POI
+      map.current.addLayer({
+        id: poiLayerId,
+        type: 'symbol',
+        source: poiSourceId,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+          'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+          'text-radial-offset': 0.5,
+          'text-justify': 'auto',
+          'text-size': 12,
+          'icon-image': ['case', 
+            ['!=', ['get', 'icon'], null], 
+            ['get', 'icon'], 
+            '' // Pas d'icône si icon est null
+          ],
+          'icon-size': 1,
+          'icon-allow-overlap': false,
+          'text-allow-overlap': false,
+          'icon-anchor': 'bottom'
+        },
+        paint: {
+          'text-color': '#000000',
+          'text-halo-width': 2
+        }
+      });
+      
+      console.log('Couche POI ajoutée avec ID:', poiLayerId);
+    }
+  }, [pointsOfInterest, poiSourceId, poiLayerId, mapLoaded]);
+  
+  // useEffect pour mettre à jour la source POI quand les points changent
+  useEffect(() => {
+    updatePOISource();
+  }, [pointsOfInterest, updatePOISource]);
+
   // Fonctions pour gérer la configuration de la carte
   const getCurrentMapZoom = () => {
     if (map.current) {
@@ -111,7 +194,7 @@ function MapEditor() {
   };
 
   // Fonction pour charger une carte existante
-  const loadExistingMap = async (id) => {
+  const loadExistingMap = useCallback(async (id) => {
     try {
       setIsLoading(true);
       console.log(`Chargement de la carte avec l'ID: ${id}`);
@@ -127,17 +210,70 @@ function MapEditor() {
       console.log('Données de la carte chargées:', mapData);
       setCurrentMap(mapData);
 
+      // S'assurer que la carte est chargée avant d'ajouter des couches
+      if (!map.current || !mapLoaded) {
+        // Si la carte n'est pas encore chargée, on stocke les données et on les appliquera plus tard
+        console.log('Carte pas encore chargée, stockage des données pour application ultérieure');
+        return;
+      }
+
+      // Le chargement des couches et POI sera géré par l'useEffect dédié
+
+    } catch (error) {
+      console.error('Erreur lors du chargement de la carte:', error);
+      alert('Erreur lors du chargement de la carte: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapLoaded]); // useCallback avec mapLoaded comme dépendance
+
+  // Fonction pour réorganiser les couches sur la carte
+  const reorderMapLayers = useCallback((newOrderedLayers) => {
+    if (!map.current) return;
+
+    // Les couches les plus hautes dans la liste doivent être affichées au-dessus
+    // Parcourir les couches de bas en haut (dernière à première)
+    for (let i = newOrderedLayers.length - 1; i >= 0; i--) {
+      const layer = newOrderedLayers[i];
+      // Pour chaque type de couche (polygon, line, point)
+      layer.layerIds.forEach(layerId => {
+        if (map.current.getLayer(layerId)) {
+          map.current.moveLayer(layerId); // déplace la couche au sommet
+        }
+      });
+    }
+  }, []);
+
+  // Effet pour l'ordre des couches à l'upload
+  useEffect(() => {
+    if (map.current && loadedLayers.length > 0) {
+      reorderMapLayers(loadedLayers);
+    }
+  }, [loadedLayers, reorderMapLayers]);
+
+  // Effet pour charger une carte existante si un mapId est fourni
+  useEffect(() => {
+    if (mapId && !currentMap) {
+      loadExistingMap(mapId);
+    }
+  }, [mapId, currentMap, loadExistingMap]);
+
+  // Effet pour appliquer les données de carte existante quand la carte devient disponible
+  useEffect(() => {
+    if (mapLoaded && currentMap && currentMap.layers) {
+      console.log('Application des données de carte existante');
+      
       // Charger les couches dans l'éditeur
-      if (mapData.layers && mapData.layers.length > 0) {
+      if (currentMap.layers && currentMap.layers.length > 0) {
         const layersToLoad = [];
         
-        for (const layer of mapData.layers) {
+        for (const layer of currentMap.layers) {
           if (layer.geojsonData && map.current) {
             // Utiliser les IDs de la DB ou générer de nouveaux
             const sourceId = layer.sourceId || `source-${layer.id}`;
             const polygonLayerId = layer.layerIds?.[0] || `polygon-${layer.id}`;
             const lineLayerId = layer.layerIds?.[1] || `line-${layer.id}`;
-            const pointLayerId = layer.layerIds?.[2] || `point-${layer.id}`;
+            // Ne pas charger les couches de points car elles sont gérées par le système POI
             
             // Ajouter la source GeoJSON à la carte
             map.current.addSource(sourceId, {
@@ -145,7 +281,7 @@ function MapEditor() {
               data: layer.geojsonData
             });
             
-            // Ajouter les couches pour visualiser les données
+            // Ajouter les couches pour visualiser les données (sans les points)
             map.current.addLayer({
               id: polygonLayerId,
               type: 'fill',
@@ -170,23 +306,13 @@ function MapEditor() {
               filter: ['==', '$type', 'LineString']
             });
 
-            map.current.addLayer({
-              id: pointLayerId,
-              type: 'circle',
-              source: sourceId,
-              paint: {
-                'circle-radius': 5,
-                'circle-color': layer.color || defaultColor,
-                'circle-opacity': layer.opacity || defaultOpacity
-              },
-              filter: ['==', '$type', 'Point']
-            });
+            // Ne pas ajouter de couche pour les points - ils seront gérés par le système POI
             
-            // Créer l'objet couche pour l'état local
+            // Créer l'objet couche pour l'état local (sans pointLayerId)
             const layerObject = {
               fileName: layer.fileName || layer.name,
               sourceId,
-              layerIds: [polygonLayerId, lineLayerId, pointLayerId],
+              layerIds: [polygonLayerId, lineLayerId], // Enlever pointLayerId
               color: layer.color || defaultColor,
               opacity: layer.opacity || defaultOpacity,
               geojsonData: layer.geojsonData,
@@ -201,77 +327,37 @@ function MapEditor() {
       }
 
       // Charger les points d'intérêt
-      if (mapData.pointsOfInterest && mapData.pointsOfInterest.length > 0) {
-        const poisWithMarkers = mapData.pointsOfInterest.map(poi => {
-          // Créer un marker si le POI a un pictogramme
-          let marker = null;
-          if (poi.pictogramFile && map.current) {
-            const el = document.createElement('div');
-            el.className = 'marker';
-            
-            const img = document.createElement('img');
-            // Utiliser l'URL du backend
-            img.src = getPictogramUrl({ publicUrl: poi.pictogramFile, file: poi.pictogramFile });
-            img.alt = poi.name;
-            img.width = 32;
-            img.height = 32;
-            el.appendChild(img);
-            
-            marker = new maplibregl.Marker({
-              element: el
-            })
-            .setLngLat(poi.coordinates)
-            .addTo(map.current);
-          }
-          
-          return {
-            ...poi,
-            // Harmoniser les propriétés avec la structure backend
-            pictogramId: poi.pictogram || poi.pictogramId,
-            marker
-          };
-        });
+      if (currentMap.pointsOfInterest && currentMap.pointsOfInterest.length > 0) {
+        const poisWithoutMarkers = currentMap.pointsOfInterest.map(poi => ({
+          ...poi,
+          // Harmoniser les propriétés avec la structure backend
+          pictogramId: poi.pictogram || poi.pictogramId,
+          pictogramFile: poi.pictogramFile,
+          pictogramName: poi.pictogramName,
+          // Plus de markers DOM
+          marker: null
+        }));
         
-        setPointsOfInterest(poisWithMarkers);
+        setPointsOfInterest(poisWithoutMarkers);
       }
 
       // Ajuster la vue de la carte selon la configuration
-      if (mapData.config && mapData.config.center && map.current) {
-        map.current.setCenter(mapData.config.center);
-        if (mapData.config.zoom) {
-          map.current.setZoom(mapData.config.zoom);
+      if (currentMap.config && currentMap.config.center && map.current) {
+        map.current.setCenter(currentMap.config.center);
+        if (currentMap.config.zoom) {
+          map.current.setZoom(currentMap.config.zoom);
         }
         
         // Mettre à jour l'état mapConfig avec les valeurs chargées
         setMapConfig({
-          zoom: mapData.config.zoom || 15,
-          center: mapData.config.center || [0, 0],
-          maxZoom: mapData.config.maxZoom || 18,
-          minZoom: mapData.config.minZoom || 0
+          zoom: currentMap.config.zoom || 15,
+          center: currentMap.config.center || [0, 0],
+          maxZoom: currentMap.config.maxZoom || 18,
+          minZoom: currentMap.config.minZoom || 0
         });
       }
-
-    } catch (error) {
-      console.error('Erreur lors du chargement de la carte:', error);
-      alert('Erreur lors du chargement de la carte: ' + error.message);
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  // Effet pour l'ordre des couches à l'upload
-  useEffect(() => {
-    if (map.current && loadedLayers.length > 0) {
-      reorderMapLayers(loadedLayers);
-    }
-  }, [loadedLayers]);
-
-  // Effet pour charger une carte existante si un mapId est fourni
-  useEffect(() => {
-    if (mapId && !currentMap) {
-      loadExistingMap(mapId);
-    }
-  }, [mapId]);
+  }, [mapLoaded, currentMap]);
 
   // Fonction pour gérer l'édition d'un point d'intérêt
   const handleEditPOI = (point) => {
@@ -314,81 +400,28 @@ function MapEditor() {
       selectedPictogram: selectedPictogram
     });
     
-    // Appliquer le pictogramme sélectionné s'il y en a un
-    if (selectedPictogram) {
-      // Si le point a déjà un marker sur la carte, le supprimer
-      if (currentEditingPOI.marker) {
-        currentEditingPOI.marker.remove();
-      }
-      
-      // Créer un élément DOM pour le marqueur
-      const el = document.createElement('div');
-      el.className = 'marker';
-      
-      // Utilisation d'une image réelle au lieu de background-image
-      const img = document.createElement('img');
-      img.src = getPictogramUrl(selectedPictogram);
-      img.alt = selectedPictogram.name || 'Pictogramme';
-      img.width = 32;
-      img.height = 32;
-      el.appendChild(img);
-      
-      // Ajouter le marker à la carte avec l'élément personnalisé
-      const marker = new maplibregl.Marker({
-        element: el
+    // Mettre à jour les données du POI
+    setPointsOfInterest(prevPoints => 
+      prevPoints.map(point => {
+        if (point.id === currentEditingPOI.id) {
+          return {
+            ...point,
+            name: editedPOIData.name,
+            properties: {
+              ...point.properties,
+              name: editedPOIData.name,
+              description: editedPOIData.description
+            },
+            pictogramId: selectedPictogram ? selectedPictogram.id : null,
+            pictogramFile: selectedPictogram ? (selectedPictogram.publicUrl || selectedPictogram.file) : null,
+            pictogramName: selectedPictogram ? selectedPictogram.name : null,
+            // Plus de markers DOM
+            marker: null
+          };
+        }
+        return point;
       })
-      .setLngLat(currentEditingPOI.coordinates)
-      .addTo(map.current);
-      
-      // Mettre à jour les données du POI avec le nouveau pictogramme et marker
-      setPointsOfInterest(prevPoints => 
-        prevPoints.map(point => {
-          if (point.id === currentEditingPOI.id) {
-            return {
-              ...point,
-              name: editedPOIData.name,
-              properties: {
-                ...point.properties,
-                name: editedPOIData.name,
-                description: editedPOIData.description
-              },
-              pictogramId: selectedPictogram.id,
-              pictogramFile: selectedPictogram.publicUrl || selectedPictogram.file,
-              pictogramName: selectedPictogram.name,
-              marker: marker
-            };
-          }
-          return point;
-        })
-      );
-    } else {
-      // Pas de pictogramme sélectionné : supprimer le marker existant
-      if (currentEditingPOI.marker) {
-        currentEditingPOI.marker.remove();
-      }
-      
-      // Mettre à jour seulement les données textuelles sans pictogramme
-      setPointsOfInterest(prevPoints => 
-        prevPoints.map(point => {
-          if (point.id === currentEditingPOI.id) {
-            return {
-              ...point,
-              name: editedPOIData.name,
-              properties: {
-                ...point.properties,
-                name: editedPOIData.name,
-                description: editedPOIData.description
-              },
-              pictogramId: null,
-              pictogramFile: null,
-              pictogramName: null,
-              marker: null
-            };
-          }
-          return point;
-        })
-      );
-    }
+    );
     
     closeEditForm();
   };
@@ -429,6 +462,12 @@ function MapEditor() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
+    // Vérifier que la carte est chargée avant de traiter les fichiers
+    if (!map.current || !mapLoaded) {
+      alert('Veuillez attendre que la carte soit complètement chargée avant d\'importer des fichiers.');
+      return;
+    }
+    
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -441,11 +480,10 @@ function MapEditor() {
             return;
           }
           
-          // Créer des identifiants uniques pour cette couche
+          // Créer des identifiants uniques pour cette couche (sans point car géré par POI)
           const sourceId = generateUniqueId('source', file.name);
           const polygonLayerId = generateUniqueId('polygon', file.name);
           const lineLayerId = generateUniqueId('line', file.name);
-          const pointLayerId = generateUniqueId('point', file.name);
           
           // Ajouter la source GeoJSON
           map.current.addSource(sourceId, {
@@ -453,7 +491,7 @@ function MapEditor() {
             data: geojson
           });
           
-          // Ajouter des couches pour visualiser les données GeoJSON
+          // Ajouter des couches pour visualiser les données GeoJSON (sans les points qui seront gérés par les POI)
           map.current.addLayer({
             id: polygonLayerId,
             type: 'fill',
@@ -478,23 +516,13 @@ function MapEditor() {
             filter: ['==', '$type', 'LineString']
           });
 
-          map.current.addLayer({
-            id: pointLayerId,
-            type: 'circle',
-            source: sourceId,
-            paint: {
-              'circle-radius': 5,
-              'circle-color': defaultColor,
-              'circle-opacity': defaultOpacity
-            },
-            filter: ['==', '$type', 'Point']
-          });
+          // Ne pas ajouter de couche pour les points - ils seront gérés par le système POI
           
-          // Ajouter les informations de la couche à l'état
+          // Ajouter les informations de la couche à l'état (sans l'ID de couche point)
           const newLayer = {
             fileName: file.name,
             sourceId,
-            layerIds: [polygonLayerId, lineLayerId, pointLayerId],
+            layerIds: [polygonLayerId, lineLayerId], // Enlever pointLayerId
             color: defaultColor,
             opacity: defaultOpacity
           };
@@ -510,7 +538,11 @@ function MapEditor() {
             coordinates: point.geometry.coordinates,
             properties: point.properties || {},
             sourceFile: file.name,
-            sourceId: sourceId
+            sourceId: sourceId,
+            pictogramId: null,
+            pictogramFile: null,
+            pictogramName: null,
+            marker: null
           }));
 
           // Ajouter les points à l'état des points d'intérêt
@@ -592,7 +624,7 @@ function MapEditor() {
   const changeLayerColor = (layerInfo, newColor) => {
     if (!map.current) return;
     
-    // Mettre à jour les styles des couches
+    // Mettre à jour les styles des couches (sans les points car gérés par POI)
     layerInfo.layerIds.forEach(layerId => {
       if (map.current.getLayer(layerId)) {
         const layerType = layerId.split('-')[0];
@@ -602,9 +634,8 @@ function MapEditor() {
           map.current.setPaintProperty(layerId, 'fill-outline-color', newColor);
         } else if (layerType === 'line') {
           map.current.setPaintProperty(layerId, 'line-color', newColor);
-        } else if (layerType === 'point') {
-          map.current.setPaintProperty(layerId, 'circle-color', newColor);
         }
+        // Enlever la gestion des points car ils sont gérés par le système POI
       }
     });
     
@@ -622,7 +653,7 @@ function MapEditor() {
   const changeLayerOpacity = (layerInfo, newOpacity) => {
     if (!map.current) return;
     
-    // Mettre à jour les styles des couches
+    // Mettre à jour les styles des couches (sans les points car gérés par POI)
     layerInfo.layerIds.forEach(layerId => {
       if (map.current.getLayer(layerId)) {
         const layerType = layerId.split('-')[0];
@@ -631,9 +662,8 @@ function MapEditor() {
           map.current.setPaintProperty(layerId, 'fill-opacity', newOpacity);
         } else if (layerType === 'line') {
           map.current.setPaintProperty(layerId, 'line-opacity', newOpacity);
-        } else if (layerType === 'point') {
-          map.current.setPaintProperty(layerId, 'circle-opacity', newOpacity);
         }
+        // Enlever la gestion des points car ils sont gérés par le système POI
       }
     });
     
@@ -646,23 +676,6 @@ function MapEditor() {
       )
     );
   };
-
-  // Fonction pour réorganiser les couches sur la carte
-  const reorderMapLayers = useCallback((newOrderedLayers) => {
-    if (!map.current) return;
-
-    // Les couches les plus hautes dans la liste doivent être affichées au-dessus
-    // Parcourir les couches de bas en haut (dernière à première)
-    for (let i = newOrderedLayers.length - 1; i >= 0; i--) {
-      const layer = newOrderedLayers[i];
-      // Pour chaque type de couche (polygon, line, point)
-      layer.layerIds.forEach(layerId => {
-        if (map.current.getLayer(layerId)) {
-          map.current.moveLayer(layerId); // déplace la couche au sommet
-        }
-      });
-    }
-  }, []);
 
   // Initialiser le drag-and-drop pour chaque élément
   const initDragElement = (element, layer, index) => {
@@ -827,6 +840,33 @@ function MapEditor() {
           const pictograms = await response.json();
           console.log('Pictogrammes chargés:', pictograms);
           setAvailablePictograms(pictograms);
+          
+          // Ajouter les pictogrammes comme icônes dans MapLibre seulement si la carte est chargée
+          if (map.current && mapLoaded && pictograms.length > 0) {
+            console.log('Ajout des pictogrammes comme icônes MapLibre:', pictograms.length);
+            pictograms.forEach(async (pictogram) => {
+              const iconUrl = getPictogramUrl(pictogram);
+              if (iconUrl) {
+                try {
+                  // Charger l'image et l'ajouter comme icône
+                  const image = new Image();
+                  image.crossOrigin = 'anonymous';
+                  image.onload = () => {
+                    if (map.current && mapLoaded && !map.current.hasImage(pictogram.id.toString())) {
+                      console.log('Ajout de l\'icône:', pictogram.id.toString());
+                      map.current.addImage(pictogram.id.toString(), image);
+                    }
+                  };
+                  image.onerror = (error) => {
+                    console.error(`Erreur lors du chargement de l'icône ${pictogram.name}:`, error);
+                  };
+                  image.src = iconUrl;
+                } catch (error) {
+                  console.error(`Erreur lors de l'ajout de l'icône ${pictogram.name}:`, error);
+                }
+              }
+            });
+          }
         } else {
           console.error('Erreur HTTP lors du chargement des pictogrammes:', response.status);
           setAvailablePictograms([]);
@@ -838,7 +878,7 @@ function MapEditor() {
     };
 
     loadPictograms();
-  }, []);
+  }, [mapLoaded]); // Dépendre de mapLoaded pour charger les icônes quand la carte est prête
 
   // Effet pour initialiser la carte
   useEffect(() => {
@@ -848,6 +888,7 @@ function MapEditor() {
       container: mapContainer.current,
       style: {
         version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
           // Aucune source de tuiles OSM
         },
@@ -872,6 +913,13 @@ function MapEditor() {
         minZoom: 0
       });
     }
+    
+    // Charger les pictogrammes après l'initialisation de la carte
+    map.current.on('load', () => {
+      // La carte est prête, marquer comme chargée
+      console.log('Carte initialisée et prête');
+      setMapLoaded(true);
+    });
   }, [mapId]);
 
   // Effet pour configurer le monitoring du drag-and-drop
@@ -906,7 +954,7 @@ function MapEditor() {
     });
 
     return cleanup;
-  }, [loadedLayers]);
+  }, [loadedLayers, handleReorder, instanceId]);
 
   // Effet pour configurer les zones de drop pour la liste
   useEffect(() => {
@@ -920,7 +968,7 @@ function MapEditor() {
     });
 
     return cleanup;
-  }, []);
+  }, [instanceId]);
 
   return (
     <div className="admin-layout">
