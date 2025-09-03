@@ -89,6 +89,19 @@ function MapEditor() {
     return `${baseName}-${cleanFileName}-${timestamp}-${idCounter++}`;
   };
 
+  // Fonction pour s'assurer que la couche POI est toujours au premier plan
+  const ensurePOILayerOnTop = useCallback(() => {
+    if (!map.current || !map.current.getLayer(poiLayerId)) return;
+    
+    // Déplacer la couche POI au sommet (sans paramètre beforeId)
+    try {
+      map.current.moveLayer(poiLayerId);
+      console.log('Couche POI déplacée au premier plan');
+    } catch (error) {
+      console.warn('Erreur lors du déplacement de la couche POI:', error);
+    }
+  }, [poiLayerId]);
+
   // Fonction pour créer ou mettre à jour la source des POI
   const updatePOISource = useCallback(() => {
     if (!map.current || !mapLoaded) {
@@ -154,13 +167,17 @@ function MapEditor() {
         },
         paint: {
           'text-color': '#000000',
+          'text-halo-color': '#ffffff',
           'text-halo-width': 2
         }
       });
       
       console.log('Couche POI ajoutée avec ID:', poiLayerId);
+      
+      // S'assurer que la couche POI est toujours au premier plan
+      ensurePOILayerOnTop();
     }
-  }, [pointsOfInterest, poiSourceId, poiLayerId, mapLoaded]);
+  }, [pointsOfInterest, poiSourceId, poiLayerId, mapLoaded, ensurePOILayerOnTop]);
   
   // useEffect pour mettre à jour la source POI quand les points changent
   useEffect(() => {
@@ -242,7 +259,10 @@ function MapEditor() {
         }
       });
     }
-  }, []);
+    
+    // S'assurer que la couche POI reste toujours au premier plan
+    ensurePOILayerOnTop();
+  }, [ensurePOILayerOnTop]);
 
   // Effet pour l'ordre des couches à l'upload
   useEffect(() => {
@@ -324,6 +344,11 @@ function MapEditor() {
         }
         
         setLoadedLayers(layersToLoad);
+        
+        // S'assurer que la couche POI est au premier plan après le chargement des couches
+        setTimeout(() => {
+          ensurePOILayerOnTop();
+        }, 100);
       }
 
       // Charger les points d'intérêt
@@ -357,7 +382,7 @@ function MapEditor() {
         });
       }
     }
-  }, [mapLoaded, currentMap]);
+  }, [mapLoaded, currentMap, ensurePOILayerOnTop]);
 
   // Fonction pour gérer l'édition d'un point d'intérêt
   const handleEditPOI = (point) => {
